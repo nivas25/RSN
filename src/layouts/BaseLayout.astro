@@ -13,6 +13,7 @@ import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/animations.css';
 import { ClientRouter } from 'astro:transitions';
+import PageTransitionGrid from '../components/animations/PageTransitionGrid.astro';
 import CustomScrollbar from '../components/ui/CustomScrollbar.astro';
 
 interface Props {
@@ -49,6 +50,7 @@ const {
   </head>
   <body>
     <CustomScrollbar />
+    <PageTransitionGrid />
     <slot />
   </body>
 </html>

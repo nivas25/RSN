@@ -1,74 +1,117 @@
 ---
 /**
- * PageTransitionGrid.astro
+ * PageTransitionGrid.astro — ULTRA-OPTIMIZED CANVAS EDITION
  * ─────────────────────────────────────────────────
  * Global SPA page transition overlay.
- * Uses a dynamic physics-based grid of falling Rubik's squares.
- * Boxes fall from the top, bounce into place, and then drop 
- * out the bottom to smoothly reveal the next page.
+ * Uses a hyper-fast HTML5 Canvas to render hundreds of falling boxes
+ * with zero DOM layout thrashing.
+ * Bypasses Astro's native ViewTransition freeze for a buttery smooth 60fps drop.
  */
 ---
 
-<div id="rsn-transition-grid" transition:persist></div>
+<canvas id="rsn-transition-canvas" transition:persist></canvas>
 
 <script>
   import { gsap } from 'gsap';
 
   const COLORS = [
-    '#85B9FF', // sky
-    '#1743FF', // royal
-    '#181287', // navy
-    '#CCFF00', // neon
-    '#00B140', // green
-    '#00593B', // forest
-    '#FF4F00', // orange
-    '#E3000F', // red
-    '#7A0010', // burgundy
+    '#85B9FF', '#1743FF', '#181287', '#CCFF00', 
+    '#00B140', '#00593B', '#FF4F00', '#E3000F', '#7A0010'
   ];
 
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D | null;
+  let boxes: any[] = [];
   let isTransitioning = false;
-  let cells: HTMLElement[] = [];
+  let rafId: number;
 
-  function generateGrid() {
-    const grid = document.getElementById('rsn-transition-grid');
-    if (!grid) return;
+  function initCanvas() {
+    canvas = document.getElementById('rsn-transition-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
     
-    grid.innerHTML = '';
-    cells = [];
-    
+    // Size canvas to screen
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    if (ctx) ctx.scale(dpr, dpr);
+  }
+
+  function generateBoxes() {
+    boxes = [];
     const isMobile = window.innerWidth < 768;
-    const CELL_SIZE = isMobile ? 60 : 100;
-    const RADIUS = isMobile ? '24px' : '40px';
+    const CELL_SIZE = isMobile ? 70 : 120;
+    const RADIUS = isMobile ? 20 : 32;
+    
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     
-    // Calculate how many columns and rows are needed to cover the screen
     const numCols = Math.ceil(vw / CELL_SIZE);
     const numRows = Math.ceil(vh / CELL_SIZE);
     
-    // We create exactly enough cells to cover the screen
     for (let row = 0; row < numRows; row++) {
       for (let col = 0; col < numCols; col++) {
-        const cell = document.createElement('div');
-        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-        
-        cell.className = 'rsn-transition-cell';
-        cell.style.cssText = `
-          position: absolute;
-          left: ${col * CELL_SIZE}px;
-          top: ${row * CELL_SIZE}px;
-          width: ${CELL_SIZE + 1}px; /* +1 to prevent sub-pixel gaps */
-          height: ${CELL_SIZE + 1}px;
-          border-radius: ${RADIUS};
-          background-color: ${color};
-          transform: translateY(-${vh + CELL_SIZE * 2}px); /* Start way above screen */
-          will-change: transform;
-        `;
-        
-        grid.appendChild(cell);
-        cells.push(cell);
+        boxes.push({
+          x: col * CELL_SIZE,
+          y: -(vh + CELL_SIZE * 2), // Start way above screen
+          w: CELL_SIZE + 1.5,
+          h: CELL_SIZE + 1.5,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          targetY: row * CELL_SIZE,
+          exitY: vh + 200,
+          radius: RADIUS
+        });
       }
     }
+  }
+
+  // Fast rounded rect drawing
+  function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function render() {
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    
+    let allFinished = true;
+    for (let i = 0; i < boxes.length; i++) {
+      const b = boxes[i];
+      if (b.y > -window.innerHeight && b.y < window.innerHeight + 100) {
+        ctx.fillStyle = b.color;
+        roundRect(ctx, b.x, b.y, b.w, b.h, b.radius);
+        ctx.fill();
+        allFinished = false; // Still drawing something
+      }
+    }
+    
+    if (isTransitioning || !allFinished) {
+      rafId = requestAnimationFrame(render);
+    }
+  }
+
+  // Inject CSS to KILL the native Astro cross-fade freeze during our custom transition
+  function disableNativeFreeze() {
+    let style = document.getElementById('rsn-fast-transition');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'rsn-fast-transition';
+      style.textContent = `::view-transition-group(root), ::view-transition-image-pair(root), ::view-transition-new(root), ::view-transition-old(root) { animation-duration: 0s !important; }`;
+      document.head.appendChild(style);
+    }
+  }
+
+  function enableNativeFreeze() {
+    const style = document.getElementById('rsn-fast-transition');
+    if (style) style.remove();
   }
 
   // Intercept the page load before it fetches the new HTML
@@ -76,27 +119,27 @@
     const originalLoader = event.loader;
     
     event.loader = async function() {
-      const grid = document.getElementById('rsn-transition-grid');
-      if (grid) grid.style.pointerEvents = 'auto'; // Block clicks
+      disableNativeFreeze(); // Instantly swap DOM behind our boxes!
+      
+      initCanvas();
+      if (canvas) canvas.style.pointerEvents = 'auto'; // Block clicks
       
       isTransitioning = true;
-      generateGrid();
+      generateBoxes();
+      render();
       
       // Animate IN: Fall from top and bounce into place
       await new Promise((resolve) => {
-        gsap.to(cells, {
-          y: 0,
-          duration: 1.0,
-          ease: 'bounce.out', // Physical bouncy reality feel
-          stagger: {
-            amount: 0.4,
-            from: 'random' // Random cascading fall
-          },
+        gsap.to(boxes, {
+          y: (i, target) => target.targetY,
+          duration: 0.8,
+          ease: 'power3.out', // Faster, sleeker ease than bounce
+          stagger: { amount: 0.3, from: 'random' },
           onComplete: resolve
         });
       });
       
-      // Fetch the new page DOM and swap it
+      // Fetch the new page DOM and swap it (happens instantly because of disableNativeFreeze)
       await originalLoader();
     };
   });
@@ -104,31 +147,33 @@
   // Fires immediately after the new DOM is swapped
   document.addEventListener('astro:page-load', () => {
     if (isTransitioning) {
-      // Animate OUT: Boxes fall down off the screen due to gravity
-      gsap.to(cells, {
-        y: window.innerHeight + 200, // Fall completely off bottom
-        duration: 0.6,
-        ease: 'power3.in', // Accelerate downwards like gravity
-        stagger: {
-          amount: 0.3,
-          from: 'random'
-        },
+      // Re-init canvas context in case DOM swap messed it up
+      initCanvas();
+      
+      // Animate OUT: Boxes fall down off the screen
+      gsap.to(boxes, {
+        y: (i, target) => target.exitY,
+        duration: 0.5,
+        ease: 'power3.in',
+        stagger: { amount: 0.2, from: 'random' },
         onComplete: () => {
-          const grid = document.getElementById('rsn-transition-grid');
-          if (grid) {
-            grid.innerHTML = ''; // Clean up DOM
-            grid.style.pointerEvents = 'none'; // Unblock clicks
-          }
-          cells = [];
+          if (canvas) canvas.style.pointerEvents = 'none';
           isTransitioning = false;
+          boxes = []; // clear memory
+          enableNativeFreeze(); // Restore normal Astro transitions
         }
       });
     }
   });
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (!isTransitioning) initCanvas();
+  });
 </script>
 
 <style>
-  #rsn-transition-grid {
+  #rsn-transition-canvas {
     position: fixed;
     top: 0;
     left: 0;
@@ -136,6 +181,5 @@
     height: 100vh;
     z-index: 9999;
     pointer-events: none; /* Let clicks pass through initially */
-    overflow: hidden;
   }
 </style>
