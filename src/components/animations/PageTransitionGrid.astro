@@ -1,121 +1,20 @@
 ---
 /**
- * PageTransitionGrid.astro — ULTRA-OPTIMIZED CANVAS EDITION
+ * PageTransitionGrid.astro — PREMIUM GEOMETRIC WIPE
  * ─────────────────────────────────────────────────
- * Global SPA page transition overlay.
- * Uses a hyper-fast HTML5 Canvas to render hundreds of falling boxes
- * with zero DOM layout thrashing.
- * Bypasses Astro's native ViewTransition freeze for a buttery smooth 60fps drop.
+ * Replaced the heavy canvas boxes with an ultra-sleek, 
+ * zero-lag, GPU-accelerated geometric slide transition.
+ * Industry standard for high-end digital agencies.
  */
 ---
 
-<canvas id="rsn-transition-canvas" transition:persist></canvas>
+<!-- Premium Dark Overlay -->
+<div id="rsn-premium-wipe" class="fixed inset-0 z-[9999] pointer-events-none bg-[#050505] flex items-center justify-center overflow-hidden">
+  <div id="rsn-wipe-panel" class="absolute inset-0 bg-[#111111] w-full h-full transform translate-y-full"></div>
+</div>
 
 <script>
   import { gsap } from 'gsap';
-
-  const COLORS = [
-    '#85B9FF', // sky
-    '#1743FF', // royal
-    '#181287', // navy
-    '#CCFF00', // neon
-    '#00B140', // green
-    '#00593B', // forest
-    '#FF4F00', // orange
-    '#E3000F', // red
-    '#7A0010', // burgundy
-  ];
-
-  let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D | null;
-  let boxes: any[] = [];
-  let isTransitioning = false;
-  let rafId: number;
-
-  function initCanvas() {
-    canvas = document.getElementById('rsn-transition-canvas') as HTMLCanvasElement;
-    if (!canvas) return;
-    ctx = canvas.getContext('2d');
-    
-    // Size canvas to screen
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    if (ctx) ctx.scale(dpr, dpr);
-  }
-
-  function generateBoxes() {
-    boxes = [];
-    const isMobile = window.innerWidth < 768;
-    const CELL_SIZE = isMobile ? 60 : 90;
-    const RADIUS = isMobile ? 18 : 28;
-    
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    
-    const numCols = Math.ceil(vw / CELL_SIZE);
-    const numRows = Math.ceil(vh / CELL_SIZE);
-    
-    let prevRowColors = new Array(numCols);
-    
-    for (let row = 0; row < numRows; row++) {
-      let leftColor = null;
-      for (let col = 0; col < numCols; col++) {
-        const topColor = prevRowColors[col];
-        
-        // Filter out colors used by adjacent boxes (left and top)
-        const availableColors = COLORS.filter(c => c !== leftColor && c !== topColor);
-        const color = availableColors[Math.floor(Math.random() * availableColors.length)] || COLORS[0];
-        
-        leftColor = color;
-        prevRowColors[col] = color;
-
-        boxes.push({
-          x: col * CELL_SIZE,
-          y: -(vh + CELL_SIZE * 2), // Start way above screen
-          w: CELL_SIZE + 1.5,
-          h: CELL_SIZE + 1.5,
-          color: color,
-          targetY: row * CELL_SIZE,
-          exitY: vh + 200,
-          radius: RADIUS
-        });
-      }
-    }
-  }
-
-  // Fast rounded rect drawing
-  function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-    if (w < 2 * r) r = w / 2;
-    if (h < 2 * r) r = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function render() {
-    if (!ctx || !canvas) return;
-    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    
-    let allFinished = true;
-    for (let i = 0; i < boxes.length; i++) {
-      const b = boxes[i];
-      if (b.y > -window.innerHeight && b.y < window.innerHeight + 100) {
-        ctx.fillStyle = b.color;
-        roundRect(ctx, b.x, b.y, b.w, b.h, b.radius);
-        ctx.fill();
-        allFinished = false; // Still drawing something
-      }
-    }
-    
-    if (isTransitioning || !allFinished) {
-      rafId = requestAnimationFrame(render);
-    }
-  }
 
   // Inject CSS to KILL the native Astro cross-fade freeze during our custom transition
   function disableNativeFreeze() {
@@ -133,72 +32,51 @@
     if (style) style.remove();
   }
 
-  // Intercept the page load before it fetches the new HTML
+  let isTransitioning = false;
+
   document.addEventListener('astro:before-preparation', (event) => {
     const originalLoader = event.loader;
+    const panel = document.getElementById('rsn-wipe-panel');
+    const container = document.getElementById('rsn-premium-wipe');
     
     event.loader = async function() {
-      disableNativeFreeze(); // Instantly swap DOM behind our boxes!
-      
-      initCanvas();
-      if (canvas) canvas.style.pointerEvents = 'auto'; // Block clicks
-      
+      disableNativeFreeze();
       isTransitioning = true;
-      generateBoxes();
-      render();
       
-      // Animate IN: Fall from top and bounce into place
-      await new Promise((resolve) => {
-        gsap.to(boxes, {
-          y: (i, target) => target.targetY,
-          duration: 0.4,
-          ease: 'power4.out', // Extremely snappy
-          stagger: { amount: 0.15, from: 'random' },
-          onComplete: resolve
+      if (container) container.style.pointerEvents = 'auto'; // Block clicks
+      
+      // Animate IN: Sleek Expo slide up
+      if (panel) {
+        await new Promise((resolve) => {
+          gsap.fromTo(panel, 
+            { y: '100%' }, 
+            { y: '0%', duration: 0.45, ease: 'expo.inOut', onComplete: resolve }
+          );
         });
-      });
+      }
       
-      // Fetch the new page DOM and swap it (happens instantly because of disableNativeFreeze)
       await originalLoader();
     };
   });
 
-  // Fires immediately after the new DOM is swapped
   document.addEventListener('astro:page-load', () => {
     if (isTransitioning) {
-      // Re-init canvas context in case DOM swap messed it up
-      initCanvas();
+      const panel = document.getElementById('rsn-wipe-panel');
+      const container = document.getElementById('rsn-premium-wipe');
       
-      // Animate OUT: Boxes fall down off the screen
-      gsap.to(boxes, {
-        y: (i, target) => target.exitY,
-        duration: 0.3,
-        ease: 'power4.in',
-        stagger: { amount: 0.1, from: 'random' },
-        onComplete: () => {
-          if (canvas) canvas.style.pointerEvents = 'none';
-          isTransitioning = false;
-          boxes = []; // clear memory
-          enableNativeFreeze(); // Restore normal Astro transitions
-        }
-      });
+      // Animate OUT: Continue sliding up to reveal new page
+      if (panel) {
+        gsap.to(panel, {
+          y: '-100%', 
+          duration: 0.45, 
+          ease: 'expo.inOut',
+          onComplete: () => {
+            if (container) container.style.pointerEvents = 'none';
+            isTransitioning = false;
+            enableNativeFreeze();
+          }
+        });
+      }
     }
   });
-
-  // Handle window resize
-  window.addEventListener('resize', () => {
-    if (!isTransitioning) initCanvas();
-  });
 </script>
-
-<style>
-  #rsn-transition-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    pointer-events: none; /* Let clicks pass through initially */
-  }
-</style>
