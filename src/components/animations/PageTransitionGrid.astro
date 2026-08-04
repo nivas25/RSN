@@ -58,9 +58,6 @@
     
     let prevRowColors = new Array(numCols);
     
-    const centerRow = Math.floor(numRows / 2);
-    const centerCol = Math.floor(numCols / 2);
-    
     for (let row = 0; row < numRows; row++) {
       let leftColor = null;
       for (let col = 0; col < numCols; col++) {
@@ -73,13 +70,6 @@
         leftColor = color;
         prevRowColors[col] = color;
 
-        let letter = null;
-        if (row === centerRow) {
-          if (col === centerCol - 1) letter = 'R';
-          else if (col === centerCol) letter = 'S';
-          else if (col === centerCol + 1) letter = 'N';
-        }
-
         boxes.push({
           x: col * CELL_SIZE,
           y: -(vh + CELL_SIZE * 2), // Start way above screen
@@ -88,9 +78,7 @@
           color: color,
           targetY: row * CELL_SIZE,
           exitY: vh + 200,
-          radius: RADIUS,
-          letter: letter,
-          size: CELL_SIZE
+          radius: RADIUS
         });
       }
     }
@@ -120,16 +108,6 @@
         ctx.fillStyle = b.color;
         roundRect(ctx, b.x, b.y, b.w, b.h, b.radius);
         ctx.fill();
-        
-        if (b.letter) {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `normal ${b.size * 0.6}px "Bebas Neue", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          // Bebas Neue sits a bit high, adjust y offset slightly
-          ctx.fillText(b.letter, b.x + b.w / 2, b.y + b.h / 2 + b.size * 0.05);
-        }
-        
         allFinished = false; // Still drawing something
       }
     }
