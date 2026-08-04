@@ -1,0 +1,56 @@
+---
+/**
+ * BaseLayout.astro
+ * ─────────────────────────────────────────────────
+ * Root layout wrapper for the RSN portfolio.
+ * Handles: <html> shell, SEO meta, font loading,
+ *          global CSS injection, and page slot.
+ */
+
+// Global CSS — imported via frontmatter (Astro-recommended pattern)
+import '../styles/reset.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import '../styles/animations.css';
+import { ClientRouter } from 'astro:transitions';
+import PageTransitionGrid from '../components/animations/PageTransitionGrid.astro';
+import CustomScrollbar from '../components/ui/CustomScrollbar.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'RSN — Researcher · Creator · Engineer',
+  description = 'Portfolio of Nivas — computational research, distributed systems, and premium AI-powered creative services.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#ffffff" />
+    <ClientRouter />
+
+    <!-- Preconnect to Google Fonts for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Kaushan+Script&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <CustomScrollbar />
+    <PageTransitionGrid />
+    <slot />
+  </body>
+</html>

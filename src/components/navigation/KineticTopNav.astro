@@ -1,0 +1,494 @@
+---
+/**
+ * KineticTopNav.astro — Ultra-Premium 3D Shape-Shifting Navigation
+ * ─────────────────────────────────────────────────────────────
+ * A 100% WebGL implementation. The navigation bar is a SINGLE 3D mesh 
+ * that physically elongates and shape-shifts between a Rubik's cube 
+ * and a sleek frosted glass bar.
+ * 
+ * Features:
+ * - Real-time Superquadric Geometry Morphing
+ * - HDRI-style 3-Point Studio Lighting
+ * - MeshPhysicalMaterial (Glassy/Glossy Apple-like aesthetics)
+ * - Seamless Texture Swapping during motion blur
+ * - Integrated Raycasting for interactions (no HTML overlays)
+ */
+---
+
+<nav class="pure-3d-nav-wrapper gsap-hidden" style="visibility: hidden;" transition:persist="pure-3d-nav">
+  <div id="pure-3d-canvas-wrap"></div>
+</nav>
+
+<script>
+  import { gsap } from 'gsap';
+  import { navigate } from 'astro:transitions/client';
+  import {
+    Scene, PerspectiveCamera, WebGLRenderer,
+    BoxGeometry, MeshPhysicalMaterial, Mesh,
+    AmbientLight, DirectionalLight, PointLight,
+    CanvasTexture, Vector2, Vector3, Raycaster
+  } from 'three';
+
+  // ═══════════════════════════════════════════════
+  // CONFIGURATION & STATE
+  // ═══════════════════════════════════════════════
+  const isMobile = window.innerWidth < 768;
+  const WRAP_HEIGHT = isMobile ? 100 : 120;
+  const EXPANDED_W = isMobile ? 6.5 : 7.0; // WebGL units width
+  const CUBE_W = 1.0;
+  
+  let isExpanded = true;
+  let isAnimating = false;
+  let rafId: number | null = null;
+  let autoCollapseTimer: ReturnType<typeof setTimeout> | null = null;
+  let scrambleIntervals: ReturnType<typeof setInterval>[] = [];
+
+  const params = { w: EXPANDED_W, rotX: 0, rotY: 0, rotZ: 0 };
+
+  // Face definitions
+  const FACES = {
+    right:  { bg: '#050505', fg: '#FFFFFF', letter: 'S', pool: ['S','स','స','ಸ','ச','サ'] },
+    left:   { bg: '#FFFFFF', fg: '#050505', letter: 'R', pool: ['R','र','ర','ಱ','ர','ラ'] },
+    top:    { bg: '#050505', fg: '#FFFFFF', letter: '',  pool: [] },
+    bottom: { bg: '#FFFFFF', fg: '#050505', letter: '',  pool: [] },
+    front:  { bg: '#FFFFFF', fg: '#050505', letter: 'R', pool: ['R','र','ర','ಱ','ர','ラ'] },
+    back:   { bg: '#050505', fg: '#FFFFFF', letter: 'N', pool: ['N','न','న','ನ','ந','ナ'] },
+  };
+
+  // ═══════════════════════════════════════════════
+  // DOM & THREE.JS SETUP
+  // ═══════════════════════════════════════════════
+  const wrapper = document.querySelector('.pure-3d-nav-wrapper') as HTMLElement;
+  const canvasWrap = document.getElementById('pure-3d-canvas-wrap') as HTMLElement;
+
+  const scene = new Scene();
+  const camera = new PerspectiveCamera(35, window.innerWidth / WRAP_HEIGHT, 0.1, 100);
+  const Z_DIST = isMobile ? 3.8 : 4.5; // Pull camera back to make it smaller on laptop
+  camera.position.set(0, 0, Z_DIST); // Defines the overall scale
+
+  const renderer = new WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: 'high-performance',
+  });
+  import { SRGBColorSpace, NoToneMapping } from 'three';
+
+  renderer.setSize(window.innerWidth, WRAP_HEIGHT);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = SRGBColorSpace;
+  renderer.toneMapping = NoToneMapping;
+  canvasWrap.appendChild(renderer.domElement);
+
+  // ─── Lighting ───
+  // Removed all lighting. Using MeshBasicMaterial below means the 
+  // colors will be rendered with 100% raw vibrancy, matching the CSS 
+  // exactly with zero shading, zero shininess, and zero dullness.
+
+  // ═══════════════════════════════════════════════
+  // DYNAMIC GEOMETRY (Superquadric Morphing)
+  // ═══════════════════════════════════════════════
+  function makeRoundedBox(w: number, h: number, d: number, rad: number, segs: number): BoxGeometry {
+    const geo = new BoxGeometry(w, h, d, Math.floor(w*segs), segs, segs);
+    const pos = geo.attributes.position;
+    const hw = w/2, hh = h/2, hd = d/2;
+    const v = new Vector3();
+
+    for (let i = 0; i < pos.count; i++) {
+      v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+      
+      const dx = Math.max(0, Math.abs(v.x) - (hw - rad));
+      const dy = Math.max(0, Math.abs(v.y) - (hh - rad));
+      const dz = Math.max(0, Math.abs(v.z) - (hd - rad));
+      
+      const inRound = (dx > 0 ? 1 : 0) + (dy > 0 ? 1 : 0) + (dz > 0 ? 1 : 0);
+      
+      if (inRound >= 2) {
+        const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (len > 0) {
+          const s = rad / len;
+          if (dx > 0) v.x = Math.sign(v.x) * ((hw - rad) + dx * s);
+          if (dy > 0) v.y = Math.sign(v.y) * ((hh - rad) + dy * s);
+          if (dz > 0) v.z = Math.sign(v.z) * ((hd - rad) + dz * s);
+        }
+      }
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  // ═══════════════════════════════════════════════
+  // TEXTURES (Crisp Canvas Generation)
+  // ═══════════════════════════════════════════════
+  function makeFaceTex(face: typeof FACES.right, isSquare = true): CanvasTexture {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d')!;
+    
+    ctx.fillStyle = face.bg;
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Subtle inner bezel
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 12;
+    ctx.strokeRect(6, 6, 500, 500);
+    
+    if (face.letter) {
+      ctx.fillStyle = face.fg;
+      ctx.font = '900 320px "Outfit", "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(face.letter, 256, 256 + 24);
+    }
+    
+    const tex = new CanvasTexture(c);
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return tex;
+  }
+
+  let currentCenterText = window.location.pathname.includes('/about') ? 'HOME' : 'ABOUT';
+  let currentCenterLink = window.location.pathname.includes('/about') ? '/' : '/about';
+
+  function makeExpandedTex(wRatio: number, centerText: string): CanvasTexture {
+    const c = document.createElement('canvas');
+    c.height = 512;
+    c.width = Math.round(512 * wRatio);
+    const ctx = c.getContext('2d')!;
+    
+    // Sleek Dark Theme
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, c.width, c.height);
+    
+    ctx.fillStyle = '#ffffff';
+    
+    // Scale font so it never overlaps, based on width
+    const fontSize = Math.min(c.height * 0.35, c.width * 0.045);
+    ctx.font = `800 ${fontSize}px "Outfit", "Space Grotesk", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const y = c.height / 2 + (fontSize * 0.08); // Slight optical adjustment
+    
+    // Distribute perfectly evenly by centering a single string
+    ctx.fillText(`WORK     ·     ${centerText}     ·     CONTACT`, c.width / 2, y);
+    
+    const tex = new CanvasTexture(c);
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return tex;
+  }
+
+  const texFrontR = makeFaceTex(FACES.front);
+  let texExpanded = makeExpandedTex(EXPANDED_W, currentCenterText);
+
+  function makeDarkTex(): CanvasTexture {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 16;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, 16, 16);
+    return new CanvasTexture(c);
+  }
+  const texDark = makeDarkTex();
+
+  // ═══════════════════════════════════════════════
+  // MATERIALS & MESH
+  // ═══════════════════════════════════════════════
+  import { MeshBasicMaterial } from 'three';
+
+  // Store original Rubik's maps to swap back and forth
+  const rubiksMaps = [
+    makeFaceTex(FACES.right),
+    makeFaceTex(FACES.left),
+    makeFaceTex(FACES.top),
+    makeFaceTex(FACES.bottom),
+    texFrontR,
+    makeFaceTex(FACES.back)
+  ];
+
+  // MeshBasicMaterial completely ignores lighting. 
+  // It outputs the exact texture color, guaranteeing zero dullness.
+  // Initially expanded, so all sides are dark except front
+  const materials = [
+    new MeshBasicMaterial({ map: texDark }),     // Right
+    new MeshBasicMaterial({ map: texDark }),     // Left
+    new MeshBasicMaterial({ map: texDark }),     // Top
+    new MeshBasicMaterial({ map: texDark }),     // Bottom
+    new MeshBasicMaterial({ map: texExpanded }), // Front (+Z)
+    new MeshBasicMaterial({ map: texDark }),     // Back
+  ];
+
+  const cube = new Mesh(makeRoundedBox(params.w, 1.0, 1.0, 0.18, 8), materials);
+  scene.add(cube);
+
+  // ═══════════════════════════════════════════════
+  // RENDER LOOP & RESIZE
+  // ═══════════════════════════════════════════════
+  function render() {
+    renderer.render(scene, camera);
+    rafId = requestAnimationFrame(render);
+  }
+  render(); // Always render since the bar is always visible
+
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth;
+    renderer.setSize(w, WRAP_HEIGHT);
+    camera.aspect = w / WRAP_HEIGHT;
+    camera.updateProjectionMatrix();
+  });
+
+  // ═══════════════════════════════════════════════
+  // ANIMATIONS
+  // ═══════════════════════════════════════════════
+  let idleY: gsap.core.Tween | null = null;
+  let idleX: gsap.core.Tween | null = null;
+
+  function startIdle() {
+    if (idleY) idleY.kill();
+    if (idleX) idleX.kill();
+    idleY = gsap.to(params, { rotY: '+=6.2832', duration: 10, ease: 'none', repeat: -1, onUpdate: updateRotation });
+    idleX = gsap.to(params, { rotX: 0.4, duration: 4, ease: 'sine.inOut', yoyo: true, repeat: -1, startAt: { rotX: -0.2 }, onUpdate: updateRotation });
+  }
+
+  function stopIdle() {
+    if (idleY) idleY.kill();
+    if (idleX) idleX.kill();
+  }
+
+  function updateRotation() {
+    if (!isAnimating) cube.rotation.set(params.rotX, params.rotY, params.rotZ);
+  }
+
+  function startScramble() {
+    stopScramble();
+    [0, 1, 4, 5].forEach(i => {
+      const faceKey = i===0?'right':i===1?'left':i===4?'front':'back';
+      const f = FACES[faceKey as keyof typeof FACES];
+      let idx = 0;
+      scrambleIntervals.push(setInterval(() => {
+        idx = (idx + 1) % f.pool.length;
+        f.letter = f.pool[idx];
+        if (i === 4 && isExpanded) return; // Don't scramble front if expanded
+        materials[i].map = makeFaceTex(f);
+      }, 800 + Math.random() * 500));
+    });
+  }
+  
+  function stopScramble() {
+    scrambleIntervals.forEach(clearInterval);
+    scrambleIntervals = [];
+  }
+
+  // ─── The Magic Shape-Shift Morph ───
+  function collapse() {
+    if (isAnimating || !isExpanded) return;
+    isAnimating = true;
+    isExpanded = false;
+    if (autoCollapseTimer) clearTimeout(autoCollapseTimer);
+    
+    let swapped = false;
+    
+    gsap.to(params, {
+      w: CUBE_W,
+      rotX: params.rotX + Math.PI * 2, // Tumble forwards
+      rotY: params.rotY + Math.PI * 2, // Spin around
+      duration: 1.4,
+      ease: 'power3.inOut',
+      onUpdate: () => {
+        cube.geometry.dispose();
+        cube.geometry = makeRoundedBox(params.w, 1.0, 1.0, 0.18, 8);
+        cube.rotation.set(params.rotX, params.rotY, params.rotZ);
+        
+        // Texture sleight-of-hand: Swap when front face is facing away
+        const progress = (params.rotY % (Math.PI * 2)) / (Math.PI * 2);
+        if (progress > 0.25 && progress < 0.75 && !swapped) {
+          for (let i = 0; i < 6; i++) {
+            materials[i].map = rubiksMaps[i];
+            materials[i].needsUpdate = true;
+          }
+          swapped = true;
+        }
+      },
+      onComplete: () => {
+        isAnimating = false;
+        startIdle();
+        startScramble();
+      }
+    });
+  }
+
+  function expand() {
+    if (isAnimating || isExpanded) return;
+    isAnimating = true;
+    isExpanded = true;
+    stopIdle();
+    stopScramble();
+    
+    // Snap rot to clean multiples to ensure smooth unwind
+    const startY = Math.round(params.rotY / (Math.PI*2)) * (Math.PI*2);
+    const startX = Math.round(params.rotX / (Math.PI*2)) * (Math.PI*2);
+    params.rotY = startY;
+    params.rotX = startX;
+    
+    let swapped = false;
+    
+    gsap.to(params, {
+      w: EXPANDED_W,
+      rotX: startX - Math.PI * 2,
+      rotY: startY - Math.PI * 2,
+      duration: 1.4,
+      ease: 'power3.inOut',
+      onUpdate: () => {
+        cube.geometry.dispose();
+        cube.geometry = makeRoundedBox(params.w, 1.0, 1.0, 0.18, 8);
+        cube.rotation.set(params.rotX, params.rotY, params.rotZ);
+        
+        const progress = Math.abs((params.rotY - startY) / (Math.PI * 2));
+        if (progress > 0.25 && progress < 0.75 && !swapped) {
+          for (let i = 0; i < 6; i++) {
+            materials[i].map = i === 4 ? texExpanded : texDark;
+            materials[i].needsUpdate = true;
+          }
+          swapped = true;
+        }
+      },
+      onComplete: () => {
+        isAnimating = false;
+        autoCollapseTimer = setTimeout(collapse, 4000);
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════
+  // INTERACTIONS (Raycasting)
+  // ═══════════════════════════════════════════════
+  const raycaster = new Raycaster();
+  const mouse = new Vector2();
+  let isHovering = false;
+
+  window.addEventListener('mousemove', (e) => {
+    if (e.clientY > WRAP_HEIGHT) {
+      if (isHovering && isExpanded && !isAnimating) {
+        isHovering = false;
+        gsap.to(cube.rotation, { x: 0, y: 0, duration: 0.6, ease: 'power2.out' });
+        document.body.style.cursor = 'default';
+      }
+      return;
+    }
+    
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / WRAP_HEIGHT) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(cube);
+    
+    if (intersects.length > 0) {
+      isHovering = true;
+      document.body.style.cursor = 'pointer';
+      
+      // Parallax hover tilt when expanded
+      if (isExpanded && !isAnimating) {
+        gsap.to(cube.rotation, {
+          y: mouse.x * 0.15,
+          x: -mouse.y * 0.15,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      }
+    } else if (isHovering) {
+      isHovering = false;
+      document.body.style.cursor = 'default';
+      if (isExpanded && !isAnimating) {
+        gsap.to(cube.rotation, { x: 0, y: 0, duration: 0.6, ease: 'power2.out' });
+      }
+    }
+  });
+
+  window.addEventListener('click', (e) => {
+    if (e.clientY > WRAP_HEIGHT) return;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(cube);
+    
+    if (intersects.length > 0) {
+      if (!isExpanded && !isAnimating) {
+        expand();
+      } else if (isExpanded && !isAnimating) {
+        // Determine which text was clicked based on local X coordinate
+        const localX = intersects[0].point.x;
+        if (localX < -EXPANDED_W/6) {
+          navigate('/work');
+        } else if (localX > EXPANDED_W/6) {
+          navigate('/contact');
+        } else {
+          navigate(currentCenterLink);
+        }
+      }
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // ENTRANCE SEQUENCE
+  // ═══════════════════════════════════════════════
+  window.addEventListener('rsn:intro-complete', () => {
+    wrapper.style.visibility = 'visible';
+    wrapper.classList.remove('gsap-hidden');
+    
+    // Entrance drop
+    gsap.fromTo(cube.position, 
+      { y: 3 }, 
+      { y: 0, duration: 1.5, ease: 'bounce.out', delay: 1.0 }
+    );
+    
+    autoCollapseTimer = setTimeout(collapse, 3500);
+  });
+
+  // Dynamically swap HOME/ABOUT when navigating
+  document.addEventListener('astro:page-load', () => {
+    const isAbout = window.location.pathname.includes('/about');
+    const newText = isAbout ? 'HOME' : 'ABOUT';
+    const newLink = isAbout ? '/' : '/about';
+
+    if (newText !== currentCenterText) {
+      currentCenterText = newText;
+      currentCenterLink = newLink;
+      
+      const newTex = makeExpandedTex(EXPANDED_W, currentCenterText);
+      texExpanded.dispose(); // Free memory
+      texExpanded = newTex;
+      
+      if (isExpanded) {
+        materials[4].map = texExpanded;
+        materials[4].needsUpdate = true;
+      }
+    }
+  });
+</script>
+
+<style>
+  .pure-3d-nav-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 120px;
+    z-index: 50;
+    pointer-events: none; /* Let clicks pass through to page below */
+  }
+  @media (max-width: 768px) {
+    .pure-3d-nav-wrapper { height: 100px; }
+  }
+  
+  #pure-3d-canvas-wrap {
+    width: 100%;
+    height: 100%;
+    pointer-events: auto; /* Capture events only on canvas */
+  }
+  
+  #pure-3d-canvas-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
+  }
+</style>

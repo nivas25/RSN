@@ -1,0 +1,36 @@
+---
+/**
+ * KineticShift.astro
+ * ─────────────────────────────────────────────────
+ * ANIMATION SEQUENCE 2 — "The Kinetic Shift"
+ *
+ * Responsibility:
+ * - Takes the grid from MosaicGrid and applies kinetic motion
+ * - Phase 2A: Columns scroll vertically at varying speeds (slot machine)
+ * - Phase 2B: Rows slide horizontally (Rubik's cube)
+ *
+ * GSAP Timeline Ownership:
+ * - tlSlotMachine: Vertical column scrolling with staggered velocities
+ *   Duration: ~1.5s | Easing: power3.inOut
+ * - tlRubikSlide: Horizontal row sliding with alternating directions
+ *   Duration: ~1.0s | Easing: power2.inOut
+ *
+ * Performance Notes:
+ * - All motion uses translateY / translateX (GPU-composited)
+ * - Column groups are batched to minimize GSAP target lookups
+ * - requestAnimationFrame alignment ensured via GSAP ticker
+ *
+ * PHASE 2 TODO:
+ * - Implement column grouping logic
+ * - Create staggered velocity map for slot machine effect
+ * - Wire up row-based horizontal slide
+ * - Connect to MosaicOrchestrator timeline
+ */
+---
+
+<!-- This component operates on MosaicGrid's DOM — no additional markup needed -->
+<!-- All logic lives in the client-side script -->
+
+<style>
+  /* Styles for kinetic states are applied dynamically via GSAP */
+</style>

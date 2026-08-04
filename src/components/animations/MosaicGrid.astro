@@ -1,0 +1,22 @@
+---
+/**
+ * MosaicGrid.astro — SEQUENCE 1: "The Light-Up"
+ * ─────────────────────────────────────────────────
+ * Full-screen container for the mosaic grid animation.
+ * Grid cells are created dynamically by MosaicOrchestrator
+ * to avoid shipping hundreds of DOM nodes in static HTML.
+ */
+---
+
+<div id="mosaic-grid" class="mosaic-grid" aria-hidden="true"></div>
+
+<style>
+  .mosaic-grid {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-mosaic);
+    pointer-events: none;
+    background-color: var(--color-bg);
+    overflow: hidden;
+  }
+</style>

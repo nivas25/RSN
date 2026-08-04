@@ -1,0 +1,127 @@
+---
+/**
+ * FloatingLetters.astro
+ * ─────────────────────────────────────────────────
+ * An automated background animation that randomly spawns
+ * the letters of "REDDY SAI NIVAS" floating upward,
+ * mimicking the keystroke effect the user loved.
+ */
+---
+
+<div id="floating-letters-canvas" class="floating-letters-canvas"></div>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const canvas = document.getElementById('floating-letters-canvas');
+  
+  // The pool of letters to spawn
+  const nameLetters = ['R', 'E', 'D', 'D', 'Y', 'S', 'A', 'I', 'N', 'I', 'V', 'A', 'S'];
+
+  function spawnLetter() {
+    if (!canvas) return;
+
+    const char = nameLetters[Math.floor(Math.random() * nameLetters.length)];
+    
+    // Spawn across the screen, mostly in the lower half so they have room to float up
+    const posX = 10 + Math.random() * 80; // 10% to 90%
+    const posY = 50 + Math.random() * 40; // 50% to 90%
+
+    // Create the container
+    const flare = document.createElement('div');
+    flare.className = 'float-flare';
+    flare.style.left = `${posX}%`;
+    flare.style.top = `${posY}%`;
+
+    // Create the letter
+    const letter = document.createElement('span');
+    letter.className = 'float-letter';
+    letter.innerText = char;
+    
+    const COLORS = ['#85B9FF', '#1743FF', '#181287', '#CCFF00', '#00B140', '#FF4F00', '#E3000F'];
+    letter.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    
+    flare.appendChild(letter);
+    canvas.appendChild(flare);
+
+    // Give it a very subtle background glow instead of a massive shockwave
+    gsap.fromTo(flare,
+      { scale: 0, opacity: 0.8 },
+      { 
+        scale: 1.5, 
+        opacity: 0, 
+        duration: 2, 
+        ease: 'power2.out',
+        onComplete: () => flare.remove() // Clean up DOM
+      }
+    );
+
+    // The letter floats up elegantly and fades out
+    gsap.fromTo(letter,
+      { y: 0, opacity: 0, scale: 0.5 },
+      { 
+        y: -150 - Math.random() * 100, // Floats high up
+        opacity: 1, 
+        scale: 1 + Math.random(), // Varies in size 
+        duration: 3 + Math.random() * 2, // 3 to 5 seconds
+        ease: 'power1.out',
+        modifiers: {
+          opacity: function(opacity, target) {
+            // Fade in, then fade out
+            const progress = target.progress || 0;
+            // Hack to get progress since GSAP modifiers don't pass it directly:
+            // We use the y-value as a proxy for progress.
+            return opacity;
+          }
+        }
+      }
+    );
+    
+    // Better way to do fade in/fade out with GSAP is using keyframes or a timeline
+    const tl = gsap.timeline();
+    tl.to(letter, { opacity: 0.8, duration: 1, ease: 'power1.inOut' })
+      .to(letter, { opacity: 0, duration: 2 + Math.random(), ease: 'power1.inOut' }, ">-0.5");
+  }
+
+  // Only start the automated floating after the intro sequence finishes
+  window.addEventListener('rsn:intro-complete', () => {
+    // Spawn letters at a moderate, elegant pace (every 400ms)
+    setInterval(spawnLetter, 400);
+  });
+</script>
+
+<style>
+  .floating-letters-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 20; /* Sits above the background */
+    pointer-events: none; /* Invisible to mouse */
+    overflow: hidden;
+  }
+
+  :global(.float-flare) {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    margin-left: -30px;
+    margin-top: -30px;
+    border-radius: 50%;
+    /* Very subtle Saffron glow */
+    background: radial-gradient(circle, rgba(255, 69, 0, 0.15) 0%, transparent 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform, opacity;
+  }
+
+  :global(.float-letter) {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 28px;
+    /* Will be dynamically colored, but default to dark for white backgrounds */
+    color: #050505; 
+    text-shadow: none;
+    will-change: transform, opacity;
+    position: absolute;
+  }
+</style>

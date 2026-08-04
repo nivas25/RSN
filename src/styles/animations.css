@@ -1,0 +1,62 @@
+/* ═══════════════════════════════════════════════
+ * animations.css — Animation-Specific Styles
+ * ═══════════════════════════════════════════════
+ * Supports GSAP animation sequences and hero transitions.
+ * Separated from global.css for clarity.
+ */
+
+/* ─── Mosaic Cell Base ─── */
+.mosaic-cell {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout style;
+}
+
+/* ─── Hero Letter Stacking ─── */
+.hero-letter {
+  display: block;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ─── Navigation Link Hover ─── */
+.hero-nav-link {
+  position: relative;
+}
+
+.hero-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-text-primary);
+  transform: translateX(-50%);
+  transition: width var(--duration-normal) var(--ease-out-expo);
+}
+
+.hero-nav-link:hover::after {
+  width: 100%;
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .mosaic-grid {
+    display: none !important;
+  }
+
+  .gsap-hidden {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

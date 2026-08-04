@@ -1,0 +1,334 @@
+---
+/**
+ * Centerpiece.astro
+ * ─────────────────────────────────────────────────
+ * SVG Multilingual Scramble Animation.
+ */
+---
+
+<div class="hero-centerpiece gsap-hidden" style="visibility: hidden;">
+  
+  <!-- ============================================== -->
+  <!-- PREMIUM VEDIC AURA (iOS Siri / Gemini Style)   -->
+  <!-- ============================================== -->
+  <div class="vedic-aura">
+    <!-- Fluid Blobs: Saffron, Marigold, Crimson, and Krishna Cyan -->
+    <div class="aura-blob blob-saffron"></div>
+    <div class="aura-blob blob-marigold"></div>
+    <div class="aura-blob blob-crimson"></div>
+    <div class="aura-blob blob-krishna"></div>
+  </div>
+  
+  <svg class="nivas-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <!-- Clip path to hide text outside the vertical bounding box -->
+      <clipPath id="slot-mask">
+        <rect x="0" y="0" width="800" height="500" />
+      </clipPath>
+    </defs>
+    
+    <g clip-path="url(#slot-mask)" class="slot-container">
+      
+      <!-- 
+        Editorial Fashion Prefix 
+        y-coordinate pushed down to visually center the entire hero group.
+      -->
+      <text x="400" y="170" text-anchor="middle" class="editorial-text">
+        I'm
+      </text>
+
+      <!-- 
+        Single perfectly centered text element ensures native kerning 
+        and absolutely flawless spacing in every single language. 
+      -->
+      <text x="400" y="330" text-anchor="middle" id="nivas-main-text" class="nivas-text en-text">
+        <tspan class="init-letter">N</tspan><tspan class="init-letter">I</tspan><tspan class="init-letter">V</tspan><tspan class="init-letter">A</tspan><tspan class="init-letter">S</tspan>
+      </text>
+    </g>
+  </svg>
+
+</div>
+
+<script>
+  import { gsap } from 'gsap';
+
+  // We logically split the Indic scripts so the unicode doesn't break during scrambling
+  const langs = [
+    { chars: ['N', 'I', 'V', 'A', 'S'], cls: 'en-text' },
+    { chars: ['नि', 'वा', 'स'], cls: 'hi-text' },
+    { chars: ['ని', 'వా', 'స్'], cls: 'te-text' },
+    { chars: ['ನಿ', 'ವಾ', 'ಸ್'], cls: 'kn-text' },
+    { chars: ['നി', 'വാ', 'സ്'], cls: 'ml-text' },
+    { chars: ['நி', 'வா', 'ஸ்'], cls: 'ta-text' },
+    { chars: ['ニ', 'ヴァ', 'ス'], cls: 'ja-text' }
+  ];
+
+  // The massive pool of characters to pull from during the lottery blur
+  const pool = ['N','I','V','A','S','नि','वा','स','ని','వా','స్','ನಿ','ವಾ','ಸ್','നി','വാ','സ്','நி','வா','ஸ்','ニ','ヴァ','ス'];
+  
+  let currentLangIdx = 0;
+  
+  // ==========================================
+  // HYPER-REALISTIC WEBGL WATER CAUSTICS
+  // (Removed by user request)
+  // ==========================================
+
+  function runLotteryScramble() {
+    currentLangIdx = (currentLangIdx + 1) % langs.length;
+    const target = langs[currentLangIdx];
+    
+    const textElement = document.getElementById('nivas-main-text');
+    if (!textElement) return;
+
+    // Instantly swap the font to match the target language
+    textElement.setAttribute('class', `nivas-text ${target.cls}`);
+    
+    const targetChars = target.chars;
+    const totalChars = targetChars.length;
+    
+    // Animation duration for the scramble (100 frames = ~1.6 seconds)
+    const totalFrames = 100; 
+    let frame = 0;
+    
+    function tick() {
+      frame++;
+      textElement.innerHTML = '';
+      
+      for (let i = 0; i < totalChars; i++) {
+        // Characters "seat" one by one from left to right as time progresses
+        const lockFrame = (totalFrames / totalChars) * (i + 1);
+        
+        let char = '';
+        if (frame >= lockFrame) {
+          // Character is locked into its final state
+          char = targetChars[i];
+        } else {
+          // Character is still actively rapidly scrambling like a lottery
+          char = pool[Math.floor(Math.random() * pool.length)];
+        }
+        
+        const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        tspan.textContent = char;
+        textElement.appendChild(tspan);
+      }
+      
+      if (frame < totalFrames) {
+        requestAnimationFrame(tick);
+      } else {
+        // Scramble finished. Wait 4 seconds, then spin again.
+        setTimeout(runLotteryScramble, 4000);
+      }
+    }
+    
+    requestAnimationFrame(tick);
+  }
+
+  function initAuraAnimations() {
+    // Reveal the aura container smoothly
+    gsap.to('.vedic-aura', { opacity: 1, duration: 3, ease: 'power2.inOut' });
+    
+    // Aura movement disabled by user request. The blobs will remain static.
+  }
+
+  window.addEventListener('rsn:intro-complete', () => {
+    const centerpiece = document.querySelector('.hero-centerpiece') as HTMLElement;
+    if (centerpiece) {
+      centerpiece.style.visibility = 'visible';
+      // High z-index to stay above the WebGL and the persistent Mosaic Grid
+      centerpiece.style.zIndex = '10';
+      centerpiece.classList.remove('gsap-hidden');
+      
+      // FIRE AURA INSTANTLY! Do not wait for text stagger.
+      initAuraAnimations();
+      
+      // Elegant fade-in for the editorial prefix
+      const editorialText = document.querySelector('.editorial-text');
+      if (editorialText) {
+        gsap.fromTo(editorialText, 
+          { y: 20, opacity: 0 }, 
+          { y: 0, opacity: 1, duration: 2, ease: 'power2.out' }
+        );
+      }
+      
+      const tspans = document.querySelectorAll('.init-letter');
+      if (tspans.length > 0) {
+        // Dramatic initial stagger reveal from left to right
+        gsap.fromTo(tspans, 
+          { y: 50, opacity: 0 }, 
+          { 
+            y: 0, 
+            opacity: 1, 
+            duration: 0.8, 
+            stagger: 0.1, 
+            ease: 'back.out(1.5)', 
+            onComplete: () => {
+              setTimeout(runLotteryScramble, 4000);
+            }
+          }
+        );
+      } else {
+        setTimeout(runLotteryScramble, 4000);
+      }
+    }
+  });
+
+  // ==========================================
+  // ZOOM-THROUGH PORTAL TRANSITION
+  // ==========================================
+  window.addEventListener('rsn:trigger-zoom', (e: any) => {
+    const textGroup = document.getElementById('nivas-main-text');
+    const targetUrl = e.detail.url;
+
+    if (!textGroup) {
+      window.location.href = targetUrl; // Fallback
+      return;
+    }
+
+    // Set origin to exact center of the text so it zooms straight into the camera
+    gsap.set(textGroup, { transformOrigin: "50% 50%" });
+
+    // Massively scale the black text until it swallows the screen
+    gsap.to(textGroup, {
+      scale: 150,
+      duration: 1.2,
+      ease: "power4.in",
+      onComplete: () => {
+        // The screen is now completely black. Navigate to the new page.
+        window.location.href = targetUrl;
+      }
+    });
+    
+    // Fade out everything else (I'm, Aura) slightly so the black text stands out
+    gsap.to('.editorial-text, .vedic-aura', {
+      opacity: 0,
+      duration: 0.5
+    });
+  });
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Playfair+Display:ital@1&family=Noto+Sans+JP:wght@800&family=Noto+Sans+Devanagari:wght@800&family=Noto+Sans+Telugu:wght@800&family=Noto+Sans+Kannada:wght@800&family=Noto+Sans+Tamil:wght@800&family=Noto+Sans+Malayalam:wght@800&display=swap');
+
+  .hero-centerpiece {
+    position: relative;
+    display: flex;
+    flex-direction: column; /* Stack the SVG and glass boxes vertically */
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background-color: #FFFFFF;
+  }
+
+  /* Premium Vedic Aura (iOS Siri / Gemini Style) */
+  .vedic-aura {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    height: 100vh;
+    z-index: 0; /* Changed from -1 so it doesn't hide behind the white background */
+    pointer-events: none;
+    opacity: 0; /* Faded in via GSAP */
+    /* We re-add the extreme blur to completely destroy the 'round' shapes and melt them into fluid gas */
+    filter: blur(80px);
+  }
+
+  .aura-blob {
+    position: absolute;
+    /* Organic, uneven blob shapes instead of perfect circles */
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    /* Hardware acceleration for buttery smooth 60fps on low-end mobile devices */
+    will-change: transform;
+    /* Static shape, animation removed by user request */
+    mix-blend-mode: multiply; /* Blends the colors together vibrantly */
+  }
+
+  /* Eye-Festival Hinduism Colors (Vibrant, Rich, Opaque) */
+  .blob-saffron {
+    top: -10%; left: -10%;
+    width: 80vw; height: 80vw;
+    max-width: 800px; max-height: 800px;
+    background: #FF4500; /* Pure Vermilion / Sindoor */
+    opacity: 0.35; /* Mid-point for a richer, darker glow */
+  }
+  
+  .blob-marigold {
+    top: 20%; left: 30%;
+    width: 90vw; height: 90vw;
+    max-width: 900px; max-height: 900px;
+    background: #FFD700; /* Pure Turmeric Gold */
+    opacity: 0.35;
+  }
+  
+  .blob-crimson {
+    top: 10%; left: -20%;
+    width: 70vw; height: 70vw;
+    max-width: 700px; max-height: 700px;
+    background: #D32F2F; /* Deep Temple Ruby Red */
+    opacity: 0.25;
+  }
+  
+  .blob-krishna {
+    top: 30%; left: 40%;
+    width: 80vw; height: 80vw;
+    max-width: 800px; max-height: 800px;
+    background: #FF8C00; /* Bright Marigold Orange */
+    opacity: 0.25;
+  }
+
+  .nivas-svg {
+    position: relative;
+    z-index: 10; /* Keep the text strictly in front of the aura */
+    width: 100%;
+    max-width: 1200px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .editorial-text {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 400; /* Extremely thin, elegant, non-bold */
+    font-size: 36px;
+    letter-spacing: 0.15em; /* Wide tracking for that premium magazine look */
+    fill: #000000;
+  }
+
+  /* 
+    On mobile, the SVG scales down. To ensure the editorial text remains legible 
+    and prominent, we massively increase its relative font size inside the SVG viewBox.
+  */
+  @media (max-width: 768px) {
+    .editorial-text {
+      font-size: 64px;
+    }
+  }
+
+  .nivas-text {
+    font-size: 120px; /* Increased from 100px */
+    font-weight: 800;
+    letter-spacing: 0.05em; /* Smooth tracking across all languages */
+    fill: #000000; /* Pure, dead black */
+  }
+  
+  .en-text { font-family: 'Outfit', sans-serif; font-weight: 900; }
+  .hi-text { font-family: 'Noto Sans Devanagari', sans-serif; font-weight: 800; font-size: 110px; }
+  .te-text { font-family: 'Noto Sans Telugu', sans-serif; font-weight: 800; font-size: 110px; }
+  .kn-text { font-family: 'Noto Sans Kannada', sans-serif; font-weight: 800; font-size: 110px; }
+  .ta-text { font-family: 'Noto Sans Tamil', sans-serif; font-weight: 800; font-size: 110px; }
+  .ml-text { font-family: 'Noto Sans Malayalam', sans-serif; font-weight: 800; font-size: 100px; }
+  .ja-text { font-family: 'Noto Sans JP', sans-serif; font-weight: 800; font-size: 105px; }
+
+  @media (max-width: 768px) {
+    .nivas-text {
+      font-size: 140px; /* Massive increase for mobile only */
+    }
+    .nivas-svg {
+      width: 100%;
+    }
+  }
+</style>

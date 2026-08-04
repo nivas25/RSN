@@ -1,0 +1,37 @@
+---
+/**
+ * CurtainReveal.astro
+ * ─────────────────────────────────────────────────
+ * ANIMATION SEQUENCE 3 — "The Curtain Reveal"
+ *
+ * Responsibility:
+ * - Shatters the mosaic grid formation
+ * - Slides all squares off screen edges (up/down/left/right)
+ * - Reveals the Hero Section that was hidden underneath
+ *
+ * GSAP Timeline Ownership:
+ * - tlShatter: Break the rigid grid — cells get random scatter offsets
+ *   Duration: ~0.3s | Easing: power1.in (quick snap)
+ * - tlDisperse: Fling cells to nearest screen edge
+ *   Duration: ~0.8s | Easing: expo.out
+ *   Stagger: 0.002s (near-simultaneous, slight organic feel)
+ *
+ * Performance Notes:
+ * - After dispersal, all mosaic cells are removed from DOM
+ *   to free memory and stop any lingering GPU layers
+ * - z-index transitions from mosaic layer to hero layer
+ * - Body scroll is unlocked after this sequence completes
+ *
+ * PHASE 2 TODO:
+ * - Calculate nearest-edge vectors for each cell
+ * - Implement the shatter → disperse two-phase timeline
+ * - Add onComplete callback to clean up DOM nodes
+ * - Unlock scroll and trigger hero entrance
+ */
+---
+
+<!-- This component operates on MosaicGrid's DOM — no additional markup needed -->
+
+<style>
+  /* Styles for shatter/disperse states are applied dynamically via GSAP */
+</style>

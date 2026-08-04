@@ -1,0 +1,141 @@
+---
+/**
+ * PageTransitionGrid.astro
+ * ─────────────────────────────────────────────────
+ * Global SPA page transition overlay.
+ * Uses a dynamic physics-based grid of falling Rubik's squares.
+ * Boxes fall from the top, bounce into place, and then drop 
+ * out the bottom to smoothly reveal the next page.
+ */
+---
+
+<div id="rsn-transition-grid" transition:persist></div>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const COLORS = [
+    '#85B9FF', // sky
+    '#1743FF', // royal
+    '#181287', // navy
+    '#CCFF00', // neon
+    '#00B140', // green
+    '#00593B', // forest
+    '#FF4F00', // orange
+    '#E3000F', // red
+    '#7A0010', // burgundy
+  ];
+
+  let isTransitioning = false;
+  let cells: HTMLElement[] = [];
+
+  function generateGrid() {
+    const grid = document.getElementById('rsn-transition-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    cells = [];
+    
+    const isMobile = window.innerWidth < 768;
+    const CELL_SIZE = isMobile ? 60 : 100;
+    const RADIUS = isMobile ? '24px' : '40px';
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    
+    // Calculate how many columns and rows are needed to cover the screen
+    const numCols = Math.ceil(vw / CELL_SIZE);
+    const numRows = Math.ceil(vh / CELL_SIZE);
+    
+    // We create exactly enough cells to cover the screen
+    for (let row = 0; row < numRows; row++) {
+      for (let col = 0; col < numCols; col++) {
+        const cell = document.createElement('div');
+        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        
+        cell.className = 'rsn-transition-cell';
+        cell.style.cssText = `
+          position: absolute;
+          left: ${col * CELL_SIZE}px;
+          top: ${row * CELL_SIZE}px;
+          width: ${CELL_SIZE + 1}px; /* +1 to prevent sub-pixel gaps */
+          height: ${CELL_SIZE + 1}px;
+          border-radius: ${RADIUS};
+          background-color: ${color};
+          transform: translateY(-${vh + CELL_SIZE * 2}px); /* Start way above screen */
+          will-change: transform;
+        `;
+        
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+  }
+
+  // Intercept the page load before it fetches the new HTML
+  document.addEventListener('astro:before-preparation', (event) => {
+    const originalLoader = event.loader;
+    
+    event.loader = async function() {
+      const grid = document.getElementById('rsn-transition-grid');
+      if (grid) grid.style.pointerEvents = 'auto'; // Block clicks
+      
+      isTransitioning = true;
+      generateGrid();
+      
+      // Animate IN: Fall from top and bounce into place
+      await new Promise((resolve) => {
+        gsap.to(cells, {
+          y: 0,
+          duration: 1.0,
+          ease: 'bounce.out', // Physical bouncy reality feel
+          stagger: {
+            amount: 0.4,
+            from: 'random' // Random cascading fall
+          },
+          onComplete: resolve
+        });
+      });
+      
+      // Fetch the new page DOM and swap it
+      await originalLoader();
+    };
+  });
+
+  // Fires immediately after the new DOM is swapped
+  document.addEventListener('astro:page-load', () => {
+    if (isTransitioning) {
+      // Animate OUT: Boxes fall down off the screen due to gravity
+      gsap.to(cells, {
+        y: window.innerHeight + 200, // Fall completely off bottom
+        duration: 0.6,
+        ease: 'power3.in', // Accelerate downwards like gravity
+        stagger: {
+          amount: 0.3,
+          from: 'random'
+        },
+        onComplete: () => {
+          const grid = document.getElementById('rsn-transition-grid');
+          if (grid) {
+            grid.innerHTML = ''; // Clean up DOM
+            grid.style.pointerEvents = 'none'; // Unblock clicks
+          }
+          cells = [];
+          isTransitioning = false;
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  #rsn-transition-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: none; /* Let clicks pass through initially */
+    overflow: hidden;
+  }
+</style>

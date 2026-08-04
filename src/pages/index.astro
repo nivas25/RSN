@@ -1,17 +1,40 @@
 ---
+/**
+ * index.astro — Root Page
+ * ─────────────────────────────────────────────────
+ * The single entry page for the RSN portfolio.
+ * Composes the intro animation overlay + hero section.
+ *
+ * PHASE 2 TODO:
+ * - Add additional sections below hero (About, Work, Contact)
+ * - Add scroll-based animations for below-the-fold content
+ */
 
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MosaicGrid from '../components/animations/MosaicGrid.astro';
+import KineticShift from '../components/animations/KineticShift.astro';
+import CurtainReveal from '../components/animations/CurtainReveal.astro';
+import MosaicOrchestrator from '../components/animations/MosaicOrchestrator.astro';
+import HeroSection from '../components/hero/HeroSection.astro';
+import KineticTopNav from '../components/navigation/KineticTopNav.astro';
+import FloatingLetters from '../components/interactive/FloatingLetters.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout>
+  <!-- Layer 1: Hero (sits behind the mosaic) -->
+  <HeroSection />
+
+  <!-- Layer 2: Mosaic overlay (covers the hero until animation completes) -->
+  <MosaicGrid />
+
+  <!-- Global Kinetic Expanding Navigation -->
+  <KineticTopNav />
+
+  <!-- Automated Floating Letters Background -->
+  <FloatingLetters />
+
+  <!-- Animation controllers (logic-only, no visual markup) -->
+  <KineticShift />
+  <CurtainReveal />
+  <MosaicOrchestrator />
+</BaseLayout>

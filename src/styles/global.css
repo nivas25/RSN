@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════
+ * global.css — Global Base Styles
+ * ═══════════════════════════════════════════════
+ * Applied to the entire site via BaseLayout.
+ * Uses design tokens from tokens.css.
+ */
+
+html {
+  font-family: var(--font-body);
+  font-size: 100%;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  overflow-x: hidden;
+}
+
+/* ─── Scroll lock during intro animation ─── */
+body.is-locked {
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ─── Typography base ─── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ─── Container utility ─── */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+/* ─── GSAP visibility helpers ─── */
+.gsap-hidden {
+  visibility: hidden;
+}
+
+.gsap-reveal {
+  visibility: visible;
+}
+
+/* ─── Selection styling ─── */
+::selection {
+  background-color: var(--color-aura-violet);
+  color: var(--color-bg);
+}

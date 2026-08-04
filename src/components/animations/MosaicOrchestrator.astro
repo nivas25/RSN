@@ -1,0 +1,447 @@
+---
+/**
+ * MosaicOrchestrator.astro — MASTER ANIMATION CONTROLLER
+ * ─────────────────────────────────────────────────
+ * Festival of Eyes: Infinite Marquee Typography Grid
+ *
+ * Timeline Flow:
+ *   Phase 1: Sequential Fill (Colors frozen)
+ *   Phase 2: Premium Color Shift (Smooth transition)
+ *   Phase 3: Infinite Vertical Marquee
+ *   Phase 4: Infinite Horizontal Marquee
+ *   Phase 5: Center-Out Hole Punch Reveal
+ */
+---
+
+<!-- Logic-only component — no visual markup -->
+
+<script>
+  import { gsap } from 'gsap';
+
+  // ═══════════════════════════════════════════════
+  // CONFIGURATION (Dynamic based on screen size later)
+  // ═══════════════════════════════════════════════
+
+  // Premium FIFA-26 Colors mapped to hex for lightning-fast GSAP interpolation
+  // (Avoids expensive CSS var() computed style lookups during high-frequency animations)
+  const COLORS = [
+    '#85B9FF', // sky
+    '#1743FF', // royal
+    '#181287', // navy
+    '#CCFF00', // neon
+    '#00B140', // green
+    '#00593B', // forest
+    '#FF4F00', // orange
+    '#E3000F', // red
+    '#7A0010', // burgundy
+  ];
+
+  function pickColor(): string {
+    return COLORS[Math.floor(Math.random() * COLORS.length)];
+  }
+
+  // ═══════════════════════════════════════════════
+  // ACCESSIBILITY & SESSION GUARDS
+  // ═══════════════════════════════════════════════
+
+  function initMosaic() {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    const hasPlayed = sessionStorage.getItem('rsn-intro-played');
+
+    if (prefersReducedMotion || hasPlayed) {
+      skipAnimation();
+    } else {
+      runAnimation();
+    }
+  }
+
+  // Runs exactly once when the script module loads, attaching our handler
+  // for all subsequent SPA navigations.
+  document.addEventListener('astro:page-load', initMosaic);
+
+  function skipAnimation(): void {
+    const grid = document.getElementById('mosaic-grid');
+    if (grid) grid.remove();
+
+    document.querySelectorAll('.gsap-hidden').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.visibility = 'visible';
+      htmlEl.classList.remove('gsap-hidden');
+    });
+
+    sessionStorage.setItem('rsn-intro-played', 'true');
+    window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
+  }
+
+  // ═══════════════════════════════════════════════
+  // MASTER ANIMATION
+  // ═══════════════════════════════════════════════
+
+  function runAnimation(): void {
+    const container = document.getElementById('mosaic-grid');
+    if (!container) return;
+    
+    let cells: HTMLElement[] = [];
+    let scrambleInterval: ReturnType<typeof setInterval> | undefined;
+    let hasDispatchedComplete = false;
+    
+    // ─── Multilingual RSN Typography Generator ───
+    function generateLetter(): string {
+      const chars = [
+        // English
+        { char: 'R', lang: 'en' }, { char: 'S', lang: 'en' }, { char: 'N', lang: 'en' },
+        // Hindi (Devanagari)
+        { char: 'र', lang: 'hi' }, { char: 'स', lang: 'hi' }, { char: 'न', lang: 'hi' },
+        // Telugu
+        { char: 'ర', lang: 'te' }, { char: 'స', lang: 'te' }, { char: 'న', lang: 'te' },
+        // Kannada
+        { char: 'ರ', lang: 'kn' }, { char: 'ಸ', lang: 'kn' }, { char: 'ನ', lang: 'kn' },
+        // Tamil
+        { char: 'ர', lang: 'ta' }, { char: 'ச', lang: 'ta' }, { char: 'ந', lang: 'ta' },
+        // Japanese (Katakana)
+        { char: 'ラ', lang: 'ja' }, { char: 'サ', lang: 'ja' }, { char: 'ナ', lang: 'ja' }
+      ];
+      
+      const item = chars[Math.floor(Math.random() * chars.length)];
+      
+      const fonts: Record<string, string> = {
+        'en': "'Space Grotesk', 'Bebas Neue', 'Inter', system-ui, sans-serif",
+        'hi': "'Noto Sans Devanagari', 'Mangal', system-ui, sans-serif",
+        'te': "'Noto Sans Telugu', 'Gautami', system-ui, sans-serif",
+        'kn': "'Noto Sans Kannada', 'Tunga', system-ui, sans-serif",
+        'ta': "'Noto Sans Tamil', 'Latha', system-ui, sans-serif",
+        'ja': "'Noto Sans JP', 'Hiragino Kaku Gothic Pro', 'Meiryo', system-ui, sans-serif"
+      };
+
+      // Use normal and medium font weights as requested
+      const weights = [400, 500];
+      const weight = weights[Math.floor(Math.random() * weights.length)];
+      
+      // Return object instead of raw HTML string for faster DOM updates
+      return {
+        char: item.char,
+        fontFamily: fonts[item.lang],
+        fontWeight: String(weight),
+        html: `<span class="mosaic-letter" style="font-family: ${fonts[item.lang]}; font-weight: ${weight};">${item.char}</span>`
+      };
+    }
+
+    // ─── Dynamic Responsive Sizing (Scoped to runAnimation) ───
+    const isMobile = window.innerWidth < 768;
+    const CELL_SIZE = isMobile ? 60 : 100;
+    const GAP = 0;
+    const PITCH = CELL_SIZE + GAP;
+    const RADIUS = isMobile ? '24px' : '40px';
+    const FONT_SIZE = isMobile ? '20px' : '32px';
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const numCols = Math.ceil(vw / PITCH) + 2;
+    const numRows = Math.ceil(vh / PITCH) + 2;
+
+    function createGrid(): void {
+      if (!container) return;
+      
+      // Give the container 3D perspective for the mechanical voxel flip later
+      gsap.set(container, { perspective: 1200 });
+
+      container.innerHTML = '';
+      cells = [];
+
+      document.body.classList.add('is-locked');
+      container.style.backgroundColor = '#FFFFFF';
+
+      // Keep track of color pools per column to ensure uniqueness
+      const colColorPools: Record<string, string[]> = {};
+
+      // Loop from -1 to allow enough cells off-screen for seamless wrapping
+      for (let row = -1; row < numRows - 1; row++) {
+        for (let col = -1; col < numCols - 1; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'mosaic-cell';
+          
+          // Assign initial frozen color from a shuffled column pool
+          const colStr = String(col);
+          if (!colColorPools[colStr] || colColorPools[colStr].length === 0) {
+            colColorPools[colStr] = [...COLORS].sort(() => 0.5 - Math.random());
+          }
+          const baseColor = colColorPools[colStr].pop()!;
+          
+          // Generate a dynamic shade of the base color to create a richer palette
+          const mixColor = Math.random() > 0.5 ? '#000000' : '#FFFFFF';
+          const mixPercentage = Math.floor(Math.random() * 35); // 0-35% darkened/lightened
+          // Pre-calculate color in JS using GSAP to avoid browser CSS parser overhead
+          const initialColor = gsap.utils.interpolate(baseColor, mixColor, mixPercentage / 100);
+          
+          const randomLetter = generateLetter();
+          
+          cell.dataset.row = String(row);
+          cell.dataset.col = String(col);
+          cell.dataset.top = String(row * PITCH);
+          
+          // Store properties directly on DOM node for ultra-fast GSAP modifier access
+          (cell as any)._originalTop = row * PITCH;
+          (cell as any)._wrapMin = -PITCH;
+          (cell as any)._wrapMax = (numRows - 1) * PITCH;
+          (cell as any)._wrapRange = (cell as any)._wrapMax - (cell as any)._wrapMin;
+          
+          // Exact styling for the cell
+          cell.style.cssText = `
+            position: absolute;
+            left: ${col * PITCH}px;
+            top: ${row * PITCH}px;
+            width: ${CELL_SIZE}px;
+            height: ${CELL_SIZE}px;
+            border-radius: ${RADIUS};
+            background-color: ${initialColor};
+            will-change: transform, opacity; /* Removed background-color to save GPU memory on mobile */
+            will-change: transform, opacity;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            backface-visibility: hidden; /* Hardware acceleration */
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0) scale(0); /* Force GPU layer and set initial state */
+            opacity: 0; /* Hidden by default to prevent layout shift before GSAP kicks in */
+          `;
+
+          cell.innerHTML = randomLetter.html;
+          container.appendChild(cell);
+          cells.push(cell);
+        }
+      }
+
+      // Safe Scramble interval for Letters
+      if (scrambleInterval) clearInterval(scrambleInterval);
+      scrambleInterval = setInterval(() => {
+        if (cells.length === 0) return;
+        const randomCell = cells[Math.floor(Math.random() * cells.length)];
+        
+        // Randomly rotate the cell or swap its letter
+        const innerLetter = randomCell.querySelector('.mosaic-letter') as HTMLElement;
+        if (!innerLetter) return;
+
+        if (Math.random() > 0.5) {
+            // Ultra-fast DOM update without innerHTML parsing
+            const newData = generateLetter();
+            innerLetter.textContent = newData.char;
+            innerLetter.style.fontFamily = newData.fontFamily;
+            innerLetter.style.fontWeight = newData.fontWeight;
+        } else {
+            const currentRot = innerLetter.dataset.rot ? parseInt(innerLetter.dataset.rot) : 0;
+            // Rotating text looks incredibly cool and avant-garde
+            const newRot = currentRot + 90;
+            innerLetter.dataset.rot = String(newRot);
+            innerLetter.style.transform = `rotate(${newRot}deg) translateZ(0)`; // translateZ ensures GPU compositing during rotation
+        }
+      }, 150);
+    }
+
+    createGrid();
+
+    // Group elements for scroll timelines
+    const colGroups: Record<string, HTMLElement[]> = {};
+    const rowGroups: Record<string, HTMLElement[]> = {};
+    
+    for (const cell of cells) {
+      const colIdx = cell.dataset.col!;
+      const rowIdx = cell.dataset.row!;
+      if (!colGroups[colIdx]) colGroups[colIdx] = [];
+      if (!rowGroups[rowIdx]) rowGroups[rowIdx] = [];
+      colGroups[colIdx].push(cell);
+      rowGroups[rowIdx].push(cell);
+    }
+
+    // Give browser 1 frame to flush the new DOM nodes before heavy math
+    requestAnimationFrame(() => {
+      // ─── GSAP Context ───
+      const ctx = gsap.context(() => {
+        // Removed gsap.set to avoid forced synchronous layout reading. Elements are scale(0)/opacity:0 natively in CSS.
+
+        const master = gsap.timeline({ onComplete: cleanup });
+        master.addLabel('start', 0);
+
+        // ─────────────────────────────────────────
+        // PHASE 1: SEQUENTIAL FILL
+        // ─────────────────────────────────────────
+        master.fromTo(cells, 
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.6,
+            ease: 'back.out(1.2)',
+            force3D: true, // Hardware acceleration active from the very first frame
+            stagger: {
+              amount: 1.5,
+              from: 'center'
+            }
+          }, 
+        'start');
+
+      const fillCompleteTime = 1.8;
+      master.addLabel('fillComplete', 'start+=' + fillCompleteTime);
+
+      // ─────────────────────────────────────────
+      // PHASE 2: FAST COLOR SHIFT (Boxes Only)
+      // ─────────────────────────────────────────
+      master.to(cells, {
+        backgroundColor: () => {
+          const baseColor = pickColor();
+          const mixColor = Math.random() > 0.5 ? '#000000' : '#FFFFFF';
+          const mixPercentage = Math.floor(Math.random() * 35); 
+          return gsap.utils.interpolate(baseColor, mixColor, mixPercentage / 100);
+        },
+        duration: 0.1, // Pat pat (microsecond feel)
+        stagger: { amount: 0.2, from: 'random' },
+        ease: 'power1.inOut'
+      }, 'fillComplete');
+
+      // ─────────────────────────────────────────
+      // PHASE 3: INFINITE VERTICAL MARQUEE + CONTINUOUS COLOR SHIFT
+      // ─────────────────────────────────────────
+      master.addLabel('vertical', 'fillComplete+=0.3');
+      
+      // Stop the SVG scrambling before heavy scrolling to free up the main thread
+      master.add(() => {
+        if (scrambleInterval) clearInterval(scrambleInterval);
+      }, 'vertical-=0.1');
+
+      // Add a continuous, smooth color shift that runs perfectly concurrently with the scroll
+      master.to(cells, {
+        backgroundColor: () => {
+          const baseColor = pickColor();
+          const mixColor = Math.random() > 0.5 ? '#000000' : '#FFFFFF';
+          const mixPercentage = Math.floor(Math.random() * 40); 
+          return gsap.utils.interpolate(baseColor, mixColor, mixPercentage / 100);
+        },
+        duration: 0.8,
+        stagger: { amount: 1.7, from: 'random' },
+        ease: 'sine.inOut'
+      }, 'vertical');
+      
+      const verticalTL = gsap.timeline();
+      for (let i = -1; i < numCols - 1; i++) {
+        const dir = i % 2 === 0 ? -1 : 1;
+        const distance = Math.round(1200 / PITCH) * PITCH * dir;
+        
+        verticalTL.to(
+          colGroups[String(i)] || [],
+          {
+            y: `+=${distance}`,
+            duration: 2.5,
+            ease: 'power2.inOut',
+            force3D: true, // Hardware acceleration
+            modifiers: {
+              y: function(y, target: any) {
+                // Ultra-fast wrapping math bypassing DOM attributes
+                const originalTop = target._originalTop;
+                const currentY = parseFloat(y);
+                const absY = originalTop + currentY;
+                const min = target._wrapMin;
+                const range = target._wrapRange;
+                
+                // Fast modulo wrap
+                const wrappedAbsY = ((absY - min) % range + range) % range + min;
+                return (wrappedAbsY - originalTop) + "px";
+              }
+            }
+          },
+          0
+        );
+      }
+      master.add(verticalTL, 'vertical');
+
+      // ─────────────────────────────────────────
+      // PHASE 4: SLOW DISAPPEAR TO REVEAL HERO
+      // ─────────────────────────────────────────
+      // Start reveal AFTER vertical scroll completes
+      master.addLabel('reveal', 'vertical+=2.6');
+      
+      master.add(() => {
+        gsap.to(container, { backgroundColor: 'transparent', duration: 1.0 });
+        
+        // Ensure hero is visible underneath before boxes finish disappearing
+        const centerpiece = document.querySelector('.hero-centerpiece') as HTMLElement;
+        if (centerpiece) {
+          centerpiece.style.visibility = 'visible';
+          centerpiece.classList.remove('gsap-hidden');
+        }
+      }, 'reveal');
+
+      // Dispatch the event slightly AFTER the squares start disappearing,
+      // so the text doesn't clash with the falling squares.
+      master.add(() => {
+        if (!hasDispatchedComplete) {
+          hasDispatchedComplete = true;
+          window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
+        }
+      }, 'reveal+=1.0');
+
+      // Slow, highly deliberate one-by-one disappearance from the center outward
+      master.to(cells, {
+        scale: 0,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.inOut',
+        force3D: true, // Hardware acceleration for disappearance
+        stagger: {
+          amount: 2.0,
+          from: 'center'
+        }
+      }, 'reveal');
+
+      // ─────────────────────────────────────────
+      // PHASE 5: NO ANIMATION FOR HERO (Already visible underneath)
+      // ─────────────────────────────────────────
+    }); // End GSAP context
+    }); // End requestAnimationFrame
+
+    function cleanup(): void {
+      if (scrambleInterval) clearInterval(scrambleInterval);
+      if (container) {
+        container.remove();
+      }
+      
+      // Unlock scrolling
+      document.body.classList.remove('is-locked');
+      
+      // We only clean up event listeners to prevent memory leaks
+      window.removeEventListener('resize', createGrid);
+      
+      // Store the flag so it doesn't run again on next page load
+      sessionStorage.setItem('rsn-intro-played', 'true');
+      
+      if (!hasDispatchedComplete) {
+        hasDispatchedComplete = true;
+        window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
+      }
+    }
+  }
+</script>
+
+<style is:global>
+  /* ─── High-End Typography Styles ─── */
+  .mosaic-letter {
+    font-size: 3rem; /* Massively increased size */
+    color: white;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    user-select: none;
+  }
+  
+  @media (max-width: 768px) {
+    .mosaic-letter {
+      font-size: 2rem;
+    }
+  }
+</style>

@@ -1,0 +1,102 @@
+---
+/**
+ * CustomScrollbar.astro
+ * ─────────────────────────────────────────────────
+ * A 100% custom, scratch-built scrollbar to completely
+ * bypass default browser scrollbars across all browsers.
+ * Features:
+ * - Ultra-thin orange line
+ * - Auto-hides when not scrolling
+ * - Mathematically syncs with window scroll position
+ */
+---
+
+<div id="rsn-custom-scrollbar-track">
+  <div id="rsn-custom-scrollbar-thumb"></div>
+</div>
+
+<script>
+  import { gsap } from 'gsap';
+
+  function initCustomScrollbar() {
+    const thumb = document.getElementById('rsn-custom-scrollbar-thumb');
+    if (!thumb) return;
+
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    let isVisible = false;
+
+    function updateScrollbar() {
+      // Calculate scroll progress
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+
+      // If page isn't scrollable, hide it completely
+      if (documentHeight <= windowHeight) {
+        gsap.to(thumb, { opacity: 0, duration: 0.3 });
+        return;
+      }
+
+      // Calculate thumb height and position
+      // The thumb height scales inversely with document height
+      const thumbHeight = Math.max((windowHeight / documentHeight) * windowHeight, 40); // min height 40px
+      const maxScrollTop = documentHeight - windowHeight;
+      const scrollPercentage = scrollTop / maxScrollTop;
+      
+      const maxThumbTop = windowHeight - thumbHeight;
+      const thumbTop = scrollPercentage * maxThumbTop;
+
+      // Update thumb styles instantly
+      thumb.style.height = `${thumbHeight}px`;
+      thumb.style.transform = `translateY(${thumbTop}px)`;
+
+      // Show thumb if hidden
+      if (!isVisible) {
+        gsap.to(thumb, { opacity: 1, duration: 0.2 });
+        isVisible = true;
+      }
+
+      // Reset auto-hide timer
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        gsap.to(thumb, { opacity: 0, duration: 0.4 });
+        isVisible = false;
+      }, 600);
+    }
+
+    // Listen to scroll events
+    window.addEventListener('scroll', updateScrollbar, { passive: true });
+    
+    // Also update on resize to recalculate math
+    window.addEventListener('resize', updateScrollbar, { passive: true });
+  }
+
+  // Ensure this runs properly with Astro ViewTransitions
+  document.addEventListener('astro:page-load', initCustomScrollbar);
+</script>
+
+<style>
+  /* ─── Track (Invisible bounds for the thumb) ─── */
+  #rsn-custom-scrollbar-track {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 6px; /* slightly wider track for breathing room */
+    height: 100vh;
+    height: 100dvh;
+    z-index: 99999;
+    pointer-events: none; /* Let clicks pass through */
+  }
+
+  /* ─── The actual thin orange line ─── */
+  #rsn-custom-scrollbar-thumb {
+    position: absolute;
+    top: 0;
+    right: 1px; /* 1px offset from absolute right edge */
+    width: 2px; /* Very very thin */
+    background-color: #FF4500; /* Sindoor Orange */
+    border-radius: 4px;
+    opacity: 0; /* Hidden by default */
+    will-change: transform, opacity;
+  }
+</style>
