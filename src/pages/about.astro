@@ -219,17 +219,7 @@ import Footer from '../components/navigation/Footer.astro';
     }
     window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
 
-    // 1. Initial Load
-    const tl = gsap.timeline();
-    tl.fromTo('.image-wrapper', 
-      { opacity: 0, y: 30, scale: 0.98 },
-      { opacity: 1, y: 0, scale: 1, duration: 1.2, ease: "power3.out", delay: 0.1 }
-    )
-    .fromTo('.greeting-wrapper',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 1.0, ease: "power2.out" },
-      "-=0.6"
-    );
+    // 1. Initial Load removed - instantly visible on transition
 
     // 2. Subtle Parallax for the Image (Adds interactive feel on scroll)
     gsap.to('.image-wrapper', {

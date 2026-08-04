@@ -23,6 +23,7 @@ body {
   line-height: var(--leading-normal);
   letter-spacing: var(--tracking-normal);
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ─── Scroll lock during intro animation ─── */
