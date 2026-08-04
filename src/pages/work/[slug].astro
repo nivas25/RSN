@@ -1,0 +1,449 @@
+---
+/**
+ * [slug].astro — Individual Project Detail Page
+ * ─────────────────────────────────────────────────────────────
+ * Split-screen layout (Desktop Image 2):
+ * - Left column: Fixed/Sticky project details (Client, Title, Desc, Awards, Credits)
+ * - Right column: Scrollable gallery with full-width images and Footer at the bottom
+ * 
+ * Stacked layout (Mobile Image 1):
+ * - Standard flow: Details -> Gallery -> Footer
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import KineticTopNav from '../../components/navigation/KineticTopNav.astro';
+import Footer from '../../components/navigation/Footer.astro';
+import { PROJECTS, type Project } from '../../data/projects';
+
+export function getStaticPaths() {
+  return PROJECTS.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+---
+
+<BaseLayout title={`${project.title} | REDDY SAI NIVAS`} description={project.description}>
+  
+  <KineticTopNav />
+
+  <main class="project-detail-main">
+    
+    <!-- LEFT SIDE: Sticky Details -->
+    <aside class="project-sidebar scroll-reveal-ui">
+      <div class="sidebar-content">
+        
+        <div class="project-meta">
+          <span class="client">{project.client}</span>
+          <span class="year">{project.year}</span>
+        </div>
+        
+        <h1 class="project-title">{project.title}</h1>
+        
+        <p class="project-description">{project.description}</p>
+        
+        <div class="visit-link-wrapper">
+          <a href={project.externalLink || '#'} class="visit-link" target="_blank" rel="noopener noreferrer">
+            VISIT PROJECT 
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </a>
+        </div>
+        
+        {project.awards && project.awards.length > 0 && (
+          <div class="project-awards">
+            <h3>AWARDS</h3>
+            <ul>
+              {project.awards.map(award => (
+                <li>{award}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {project.credits && project.credits.length > 0 && (
+          <div class="project-credits">
+            <h3>CREDITS</h3>
+            <div class="credits-grid">
+              {project.credits.map(credit => (
+                <div class="credit-row">
+                  <div class="credit-role">
+                    {credit.role}
+                    <span class="dots"></span>
+                  </div>
+                  <div class="credit-names">
+                    {credit.names.map(name => <div>{name}</div>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </aside>
+
+    <!-- RIGHT SIDE: Scrolling Gallery -->
+    <section class="project-gallery">
+      <div class="gallery-content">
+        {(project.gallery || project.cards).map((img, i) => (
+          <div class={`gallery-item ${i === 0 ? 'gallery-hero' : 'gallery-sub'}`}>
+            <img 
+              src={img.url} 
+              alt={img.alt || `${project.title} Showcase Image ${i + 1}`} 
+              loading={i === 0 ? "eager" : "lazy"} 
+              decoding="async" 
+            />
+          </div>
+        ))}
+      </div>
+      
+      <!-- Footer placed inside the scrolling right panel -->
+      <div class="gallery-footer">
+        <Footer activePage="work" class="project-inline-footer" />
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initProjectPage() {
+    // Ensure 3D nav is visible and trigger its entrance
+    const navWrapper = document.querySelector('.pure-3d-nav-wrapper') as HTMLElement;
+    if (navWrapper) {
+      navWrapper.style.visibility = 'visible';
+      navWrapper.classList.remove('gsap-hidden');
+    }
+    window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
+
+    // Fade in the sticky sidebar UI smoothly
+    gsap.fromTo('.scroll-reveal-ui', 
+      { opacity: 0, x: -20 },
+      { opacity: 1, x: 0, duration: 1.0, ease: 'power3.out', delay: 0.2 }
+    );
+
+  }
+
+  document.addEventListener('astro:page-load', initProjectPage);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    initProjectPage();
+  }
+</script>
+
+<style>
+  .project-detail-main {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #FFFFFF;
+    color: #111111;
+  }
+
+  /* ─── LEFT SIDEBAR (STICKY) ─── */
+  .project-sidebar {
+    width: 40%;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    padding: 120px 48px 40px 48px;
+    box-sizing: border-box;
+    scrollbar-width: none; /* Firefox */
+  }
+  .project-sidebar::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+  }
+
+  .project-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 12px;
+  }
+
+  .client {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .year {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .project-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 16px 0;
+  }
+
+  .project-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: #333333;
+    margin: 0 0 24px 0;
+  }
+
+  .visit-link-wrapper {
+    margin-bottom: 40px;
+  }
+
+  .visit-link {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #111111;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+  }
+
+  .visit-link:hover {
+    color: #FF4500;
+  }
+
+  .visit-link svg {
+    transition: transform 0.2s ease;
+  }
+
+  .visit-link:hover svg {
+    transform: translate(2px, -2px);
+  }
+
+  .project-awards, .project-credits {
+    margin-bottom: 32px;
+  }
+
+  .project-awards h3, .project-credits h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 20px 0;
+    color: #111111;
+  }
+
+  .project-awards ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .project-awards li {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #111111;
+  }
+
+  .credits-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .credit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .credit-role {
+    font-weight: 500;
+    color: #111111;
+    display: flex;
+    align-items: baseline;
+    flex-grow: 1;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+
+  .dots {
+    flex-grow: 1;
+    border-bottom: 1px dotted rgba(0, 0, 0, 0.2);
+    margin: 0 12px;
+    position: relative;
+    top: -4px;
+  }
+
+  .credit-names {
+    font-weight: 600;
+    color: #111111;
+    text-align: right;
+    min-width: 140px;
+  }
+
+  /* ─── RIGHT GALLERY ─── */
+  .project-gallery {
+    width: 60%;
+    min-height: 100vh;
+    padding: 140px 48px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gallery-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    margin-bottom: 80px;
+  }
+
+  .gallery-item {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .gallery-item img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .gallery-hero {
+    /* If you want the first image to behave specially */
+  }
+
+  .gallery-footer {
+    /* Footer constraint within the right column on desktop */
+    width: 100%;
+  }
+
+  /* Target the inline footer to ensure it looks balanced in the constrained column */
+  :global(.project-inline-footer) {
+    padding: 60px 0 40px 0 !important;
+  }
+  :global(.project-inline-footer .footer-container) {
+    padding: 0 !important; /* Remove the global horizontal padding */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 40px;
+  }
+  :global(.project-inline-footer .footer-left),
+  :global(.project-inline-footer .footer-right) {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1024px) {
+    .project-detail-main {
+      flex-direction: column;
+    }
+
+    .project-sidebar {
+      width: 100%;
+      height: auto;
+      position: relative;
+      padding: 140px 40px 40px 40px;
+      border-bottom: none;
+    }
+
+    .sidebar-content {
+      max-width: 100%;
+    }
+
+    .project-gallery {
+      width: 100%;
+      padding: 0 40px 0 40px;
+    }
+
+    :global(.project-inline-footer .footer-container) {
+      flex-direction: row; /* Revert back to horizontal for standard tablet/mobile footer flow */
+    }
+  }
+
+  @media (max-width: 768px) {
+    .project-sidebar {
+      padding: 120px 24px 40px 24px;
+    }
+    
+    .project-title {
+      font-size: 36px;
+    }
+
+    .project-gallery {
+      padding: 0 24px 0 24px;
+    }
+    
+    .gallery-content {
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .project-sidebar {
+      padding: 110px 16px 32px 16px;
+    }
+
+    .project-title {
+      font-size: 32px;
+    }
+
+    .project-gallery {
+      padding: 0 16px 0 16px;
+    }
+    
+    .credit-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    
+    .dots {
+      display: none;
+    }
+    
+    .credit-names {
+      text-align: left;
+    }
+  }
+</style>

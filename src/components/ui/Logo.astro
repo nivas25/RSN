@@ -1,32 +1,42 @@
-<svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+---
+interface Props {
+  width?: string;
+  height?: string;
+  class?: string;
+}
+
+const { width = '32', height = '32', class: className = '' } = Astro.props;
+---
+
+<svg width={width} height={height} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class={`rsn-mosaic-logo ${className}`}>
   <!-- Row 1 -->
   <!-- Top Left: R -->
   <rect x="0" y="0" width="9" height="9" fill="#1743FF" rx="2" />
   <text x="4.5" y="6.8" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="7.5" fill="#FFFFFF" text-anchor="middle">R</text>
 
   <!-- Top Mid -->
-  <rect x="11.5" y="0" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="11.5" y="0" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
   
   <!-- Top Right -->
-  <rect x="23" y="0" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="23" y="0" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
 
   <!-- Row 2 -->
   <!-- Mid Left -->
-  <rect x="0" y="11.5" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="0" y="11.5" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
   
   <!-- Center: S -->
   <rect x="11.5" y="11.5" width="9" height="9" fill="#CCFF00" rx="2" />
   <text x="16" y="18.3" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="7.5" fill="#050505" text-anchor="middle">S</text>
 
   <!-- Mid Right -->
-  <rect x="23" y="11.5" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="23" y="11.5" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
 
   <!-- Row 3 -->
   <!-- Bot Left -->
-  <rect x="0" y="23" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="0" y="23" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
   
   <!-- Bot Mid -->
-  <rect x="11.5" y="23" width="9" height="9" fill="#050505" fill-opacity="0.12" rx="2" />
+  <rect x="11.5" y="23" width="9" height="9" fill="currentColor" fill-opacity="0.12" rx="2" />
   
   <!-- Bot Right: N -->
   <rect x="23" y="23" width="9" height="9" fill="#FF4F00" rx="2" />

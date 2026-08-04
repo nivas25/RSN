@@ -147,10 +147,34 @@
     return tex;
   }
 
-  let currentCenterText = window.location.pathname.includes('/about') ? 'HOME' : 'ABOUT';
-  let currentCenterLink = window.location.pathname.includes('/about') ? '/' : '/about';
+  function getNavConfig() {
+    const path = window.location.pathname;
+    if (path.includes('/work')) {
+      return {
+        text: 'HOME     ·     ABOUT     ·     CONTACT',
+        leftLink: '/',
+        centerLink: '/about',
+        rightLink: '/contact'
+      };
+    } else if (path.includes('/about')) {
+      return {
+        text: 'WORK     ·     HOME     ·     CONTACT',
+        leftLink: '/work',
+        centerLink: '/',
+        rightLink: '/contact'
+      };
+    } else {
+      return {
+        text: 'WORK     ·     ABOUT     ·     CONTACT',
+        leftLink: '/work',
+        centerLink: '/about',
+        rightLink: '/contact'
+      };
+    }
+  }
 
-  function makeExpandedTex(wRatio: number, centerText: string): CanvasTexture {
+  let currentNavConfig = getNavConfig();
+  function makeExpandedTex(wRatio: number, displayText: string): CanvasTexture {
     const c = document.createElement('canvas');
     c.height = 512;
     c.width = Math.round(512 * wRatio);
@@ -171,7 +195,7 @@
     const y = c.height / 2 + (fontSize * 0.08); // Slight optical adjustment
     
     // Distribute perfectly evenly by centering a single string
-    ctx.fillText(`WORK     ·     ${centerText}     ·     CONTACT`, c.width / 2, y);
+    ctx.fillText(displayText, c.width / 2, y);
     
     const tex = new CanvasTexture(c);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -179,7 +203,8 @@
   }
 
   const texFrontR = makeFaceTex(FACES.front);
-  let texExpanded = makeExpandedTex(EXPANDED_W, currentCenterText);
+  const frontFace = isMobile ? makeFaceTex(FACES.front) : makeExpandedTex(EXPANDED_W, currentNavConfig.text);
+  let texExpanded = frontFace;
 
   function makeDarkTex(): CanvasTexture {
     const c = document.createElement('canvas');
@@ -417,11 +442,11 @@
         // Determine which text was clicked based on local X coordinate
         const localX = intersects[0].point.x;
         if (localX < -EXPANDED_W/6) {
-          navigate('/work');
+          navigate(currentNavConfig.leftLink);
         } else if (localX > EXPANDED_W/6) {
-          navigate('/contact');
+          navigate(currentNavConfig.rightLink);
         } else {
-          navigate(currentCenterLink);
+          navigate(currentNavConfig.centerLink);
         }
       }
     }
@@ -443,17 +468,14 @@
     autoCollapseTimer = setTimeout(collapse, 3500);
   });
 
-  // Dynamically swap HOME/ABOUT when navigating
+  // Dynamically swap links based on page
   document.addEventListener('astro:page-load', () => {
-    const isAbout = window.location.pathname.includes('/about');
-    const newText = isAbout ? 'HOME' : 'ABOUT';
-    const newLink = isAbout ? '/' : '/about';
+    const newConfig = getNavConfig();
 
-    if (newText !== currentCenterText) {
-      currentCenterText = newText;
-      currentCenterLink = newLink;
+    if (newConfig.text !== currentNavConfig.text) {
+      currentNavConfig = newConfig;
       
-      const newTex = makeExpandedTex(EXPANDED_W, currentCenterText);
+      const newTex = makeExpandedTex(EXPANDED_W, currentNavConfig.text);
       texExpanded.dispose(); // Free memory
       texExpanded = newTex;
       

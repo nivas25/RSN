@@ -1,0 +1,158 @@
+---
+/**
+ * work.astro — Projects & Selected Works Showcase
+ * ─────────────────────────────────────────────────────────────
+ * Editorial Showcase Layout matching Desktop (Image 1) & Mobile (Image 2):
+ * - Left column: Client metadata, Year, Bold Title, Description with "Read more"
+ * - Right column: Multi-card media showcase with rounded corners and smooth hover zoom
+ * - Seamless 3D Kinetic Top Navigation + RSN Footer
+ * - Instant asset caching and zero-flicker transitions
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import KineticTopNav from '../components/navigation/KineticTopNav.astro';
+import Footer from '../components/navigation/Footer.astro';
+import ProjectRow from '../components/work/ProjectRow.astro';
+import { PROJECTS } from '../data/projects';
+---
+
+<BaseLayout title="Work | REDDY SAI NIVAS" description="Selected works, digital architectures, and creative technology projects by Reddy Sai Nivas.">
+  
+  <!-- Global 3D Kinetic Shape-Shifting Navigation -->
+  <KineticTopNav />
+
+  <main class="work-page-main">
+    <div class="work-container">
+      
+      <!-- PROJECT SHOWCASE LIST -->
+      <section class="projects-section" aria-label="Selected Projects">
+        {PROJECTS.map((project, index) => (
+          <div class="project-wrapper scroll-reveal-item">
+            <ProjectRow project={project} index={index} />
+          </div>
+        ))}
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Global Footer with WORK active -->
+  <Footer activePage="work" />
+</BaseLayout>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { preloadAllImages } from '../utils/assetPreloader';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initWorkPage() {
+    // Warm up image cache immediately
+    preloadAllImages();
+
+    // Ensure 3D nav is visible
+    const navWrapper = document.querySelector('.pure-3d-nav-wrapper') as HTMLElement;
+    if (navWrapper) {
+      navWrapper.style.visibility = 'visible';
+      navWrapper.classList.remove('gsap-hidden');
+    }
+    window.dispatchEvent(new CustomEvent('rsn:intro-complete'));
+
+    // Scroll reveal animations for project rows
+    const projectItems = document.querySelectorAll('.scroll-reveal-item');
+    projectItems.forEach((item, index) => {
+      gsap.fromTo(
+        item,
+        { opacity: 0, y: 36 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: item,
+            start: 'top 88%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+    });
+  }
+
+  // Support both standard load and Astro Client Router navigations
+  document.addEventListener('astro:page-load', initWorkPage);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    initWorkPage();
+  }
+</script>
+
+<style>
+  .work-page-main {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #FFFFFF;
+    color: #111111;
+    padding-top: 140px;
+    padding-bottom: 40px;
+    overflow-x: hidden;
+  }
+
+  .work-container {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+
+  .projects-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .project-wrapper {
+    width: 100%;
+    will-change: opacity, transform;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  .project-wrapper:last-child {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  /* ─── RESPONSIVE SPACING ─── */
+  @media (max-width: 1024px) {
+    .work-page-main {
+      padding-top: 120px;
+      padding-bottom: 30px;
+    }
+
+    .work-container {
+      padding: 0 32px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .work-page-main {
+      padding-top: 110px;
+      padding-bottom: 20px;
+    }
+
+    .work-container {
+      padding: 0 20px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .work-page-main {
+      padding-top: 100px;
+    }
+
+    .work-container {
+      padding: 0 16px;
+    }
+  }
+</style>

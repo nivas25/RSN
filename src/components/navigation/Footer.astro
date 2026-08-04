@@ -20,9 +20,7 @@ const { class: className = '' } = Astro.props;
     <!-- LEFT SIDE: LOGO + MAIN NAVIGATION -->
     <div class="footer-left">
       <a href="/" class="footer-logo" aria-label="RSN Home">
-        <div class="rsn-cube-mark">
-          <span class="rsn-mark-text">RSN</span>
-        </div>
+        <img src="https://ik.imagekit.io/nivas25/RSN/logo.png?tr=w-64,h-64" alt="RSN Logo" class="footer-logo-img" />
       </a>
 
       <nav class="footer-nav" aria-label="Footer Navigation">
@@ -38,7 +36,7 @@ const { class: className = '' } = Astro.props;
       
       <!-- SOCIAL ICONS -->
       <div class="footer-socials">
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="Instagram">
+        <a href="https://www.instagram.com/nivas.png" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="Instagram">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
@@ -46,13 +44,13 @@ const { class: className = '' } = Astro.props;
           </svg>
         </a>
 
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="X (Twitter)">
+        <a href="https://x.com/_nivas_sai_" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="X (Twitter)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
         </a>
 
-        <a href="https://linkedin.com/in/reddy-sai-nivas" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="LinkedIn">
+        <a href="https://www.linkedin.com/in/nivas25" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="LinkedIn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
             <rect x="2" y="9" width="4" height="12"></rect>
@@ -110,34 +108,17 @@ const { class: className = '' } = Astro.props;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .rsn-cube-mark {
+  .footer-logo:hover {
+    transform: scale(1.05);
+  }
+
+  .footer-logo-img {
     width: 32px;
-    height: 32px;
-    background: #0d0d0d;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .rsn-mark-text {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    color: #FFFFFF;
-    transition: color 0.35s ease;
-  }
-
-  .footer-logo:hover .rsn-cube-mark {
-    transform: translateY(-2px) rotate(-4deg);
-    background: #FF4500;
-    box-shadow: 0 6px 16px rgba(255, 69, 0, 0.3);
+    height: auto;
+    object-fit: contain;
   }
 
   .footer-nav {

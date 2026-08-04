@@ -17,6 +17,7 @@
 
 <script>
   import { gsap } from 'gsap';
+  import { preloadAllImages } from '../../utils/assetPreloader';
 
   // ═══════════════════════════════════════════════
   // CONFIGURATION (Dynamic based on screen size later)
@@ -45,6 +46,7 @@
   // ═══════════════════════════════════════════════
 
   function initMosaic() {
+    preloadAllImages();
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
