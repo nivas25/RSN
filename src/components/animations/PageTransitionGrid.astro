@@ -15,8 +15,14 @@
   import { gsap } from 'gsap';
 
   const COLORS = [
-    '#85B9FF', '#1743FF', '#181287', '#CCFF00', 
-    '#00B140', '#00593B', '#FF4F00', '#E3000F', '#7A0010'
+    '#FFB3BA', // pastel pink
+    '#FFDFBA', // pastel orange
+    '#FFFFBA', // pastel yellow
+    '#BAFFC9', // pastel green
+    '#BAE1FF', // pastel blue
+    '#E8BAFF', // pastel purple
+    '#FFC4E1', // pastel magenta
+    '#B2F5EA'  // pastel teal
   ];
 
   let canvas: HTMLCanvasElement;
@@ -40,8 +46,8 @@
   function generateBoxes() {
     boxes = [];
     const isMobile = window.innerWidth < 768;
-    const CELL_SIZE = isMobile ? 40 : 60;
-    const RADIUS = isMobile ? 14 : 22;
+    const CELL_SIZE = isMobile ? 60 : 90;
+    const RADIUS = isMobile ? 18 : 28;
     
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -49,14 +55,26 @@
     const numCols = Math.ceil(vw / CELL_SIZE);
     const numRows = Math.ceil(vh / CELL_SIZE);
     
+    let prevRowColors = new Array(numCols);
+    
     for (let row = 0; row < numRows; row++) {
+      let leftColor = null;
       for (let col = 0; col < numCols; col++) {
+        const topColor = prevRowColors[col];
+        
+        // Filter out colors used by adjacent boxes (left and top)
+        const availableColors = COLORS.filter(c => c !== leftColor && c !== topColor);
+        const color = availableColors[Math.floor(Math.random() * availableColors.length)] || COLORS[0];
+        
+        leftColor = color;
+        prevRowColors[col] = color;
+
         boxes.push({
           x: col * CELL_SIZE,
           y: -(vh + CELL_SIZE * 2), // Start way above screen
           w: CELL_SIZE + 1.5,
           h: CELL_SIZE + 1.5,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          color: color,
           targetY: row * CELL_SIZE,
           exitY: vh + 200,
           radius: RADIUS
