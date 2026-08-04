@@ -40,8 +40,8 @@
   function generateBoxes() {
     boxes = [];
     const isMobile = window.innerWidth < 768;
-    const CELL_SIZE = isMobile ? 70 : 120;
-    const RADIUS = isMobile ? 20 : 32;
+    const CELL_SIZE = isMobile ? 40 : 60;
+    const RADIUS = isMobile ? 14 : 22;
     
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -132,9 +132,9 @@
       await new Promise((resolve) => {
         gsap.to(boxes, {
           y: (i, target) => target.targetY,
-          duration: 0.8,
-          ease: 'power3.out', // Faster, sleeker ease than bounce
-          stagger: { amount: 0.3, from: 'random' },
+          duration: 1.0,
+          ease: 'bounce.out', // Bouncy physical reality feel
+          stagger: { amount: 0.5, from: 'random' },
           onComplete: resolve
         });
       });
@@ -153,9 +153,9 @@
       // Animate OUT: Boxes fall down off the screen
       gsap.to(boxes, {
         y: (i, target) => target.exitY,
-        duration: 0.5,
+        duration: 0.6,
         ease: 'power3.in',
-        stagger: { amount: 0.2, from: 'random' },
+        stagger: { amount: 0.4, from: 'random' },
         onComplete: () => {
           if (canvas) canvas.style.pointerEvents = 'none';
           isTransitioning = false;
