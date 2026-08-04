@@ -10,7 +10,12 @@
 
 <!-- Premium Dark Overlay -->
 <div id="rsn-premium-wipe" class="fixed inset-0 z-[9999] pointer-events-none bg-[#050505] flex items-center justify-center overflow-hidden">
-  <div id="rsn-wipe-panel" class="absolute inset-0 bg-[#111111] w-full h-full transform translate-y-full"></div>
+  <div id="rsn-wipe-panel" class="absolute inset-0 bg-[#111111] w-full h-full transform translate-y-full flex items-center justify-center">
+    <div id="rsn-wipe-loader" class="opacity-0 flex flex-col items-center gap-4">
+      <div class="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin"></div>
+      <span class="font-['Space_Grotesk'] text-white/50 text-[11px] tracking-[0.2em] uppercase">Loading</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -45,17 +50,35 @@
       
       if (container) container.style.pointerEvents = 'auto'; // Block clicks
       
+      let loaderTimeout: ReturnType<typeof setTimeout>;
       // Animate IN: Sleek Expo slide up
       if (panel) {
         await new Promise((resolve) => {
           gsap.fromTo(panel, 
             { y: '100%' }, 
-            { y: '0%', duration: 0.45, ease: 'expo.inOut', onComplete: resolve }
+            { 
+              y: '0%', 
+              duration: 0.45, 
+              ease: 'expo.inOut', 
+              onComplete: () => {
+                // If network hangs, gracefully show the loading spinner after 200ms delay
+                loaderTimeout = setTimeout(() => {
+                  const loader = document.getElementById('rsn-wipe-loader');
+                  if (loader) gsap.to(loader, { opacity: 1, duration: 0.4 });
+                }, 200);
+                resolve(null);
+              } 
+            }
           );
         });
       }
       
       await originalLoader();
+      
+      // Cleanup loader immediately if the network request resolved
+      if (loaderTimeout) clearTimeout(loaderTimeout);
+      const loader = document.getElementById('rsn-wipe-loader');
+      if (loader) gsap.set(loader, { opacity: 0 });
     };
   });
 
