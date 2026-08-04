@@ -15,14 +15,15 @@
   import { gsap } from 'gsap';
 
   const COLORS = [
-    '#E2E8F0', // slate 200
-    '#94A3B8', // slate 400
-    '#38BDF8', // sky 400
-    '#818CF8', // indigo 400
-    '#A78BFA', // violet 400
-    '#F472B6', // pink 400
-    '#FB923C', // orange 400
-    '#34D399'  // emerald 400
+    '#85B9FF', // sky
+    '#1743FF', // royal
+    '#181287', // navy
+    '#CCFF00', // neon
+    '#00B140', // green
+    '#00593B', // forest
+    '#FF4F00', // orange
+    '#E3000F', // red
+    '#7A0010', // burgundy
   ];
 
   let canvas: HTMLCanvasElement;
@@ -171,9 +172,9 @@
       await new Promise((resolve) => {
         gsap.to(boxes, {
           y: (i, target) => target.targetY,
-          duration: 0.6,
-          ease: 'power3.out', // Snappy, zero delay feel
-          stagger: { amount: 0.25, from: 'random' },
+          duration: 0.4,
+          ease: 'power4.out', // Extremely snappy
+          stagger: { amount: 0.15, from: 'random' },
           onComplete: resolve
         });
       });
@@ -192,9 +193,9 @@
       // Animate OUT: Boxes fall down off the screen
       gsap.to(boxes, {
         y: (i, target) => target.exitY,
-        duration: 0.4,
-        ease: 'power3.in',
-        stagger: { amount: 0.2, from: 'random' },
+        duration: 0.3,
+        ease: 'power4.in',
+        stagger: { amount: 0.1, from: 'random' },
         onComplete: () => {
           if (canvas) canvas.style.pointerEvents = 'none';
           isTransitioning = false;
