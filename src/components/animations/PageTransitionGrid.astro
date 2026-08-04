@@ -15,14 +15,14 @@
   import { gsap } from 'gsap';
 
   const COLORS = [
-    '#FFB3BA', // pastel pink
-    '#FFDFBA', // pastel orange
-    '#FFFFBA', // pastel yellow
-    '#BAFFC9', // pastel green
-    '#BAE1FF', // pastel blue
-    '#E8BAFF', // pastel purple
-    '#FFC4E1', // pastel magenta
-    '#B2F5EA'  // pastel teal
+    '#E2E8F0', // slate 200
+    '#94A3B8', // slate 400
+    '#38BDF8', // sky 400
+    '#818CF8', // indigo 400
+    '#A78BFA', // violet 400
+    '#F472B6', // pink 400
+    '#FB923C', // orange 400
+    '#34D399'  // emerald 400
   ];
 
   let canvas: HTMLCanvasElement;
@@ -57,6 +57,9 @@
     
     let prevRowColors = new Array(numCols);
     
+    const centerRow = Math.floor(numRows / 2);
+    const centerCol = Math.floor(numCols / 2);
+    
     for (let row = 0; row < numRows; row++) {
       let leftColor = null;
       for (let col = 0; col < numCols; col++) {
@@ -69,6 +72,13 @@
         leftColor = color;
         prevRowColors[col] = color;
 
+        let letter = null;
+        if (row === centerRow) {
+          if (col === centerCol - 1) letter = 'R';
+          else if (col === centerCol) letter = 'S';
+          else if (col === centerCol + 1) letter = 'N';
+        }
+
         boxes.push({
           x: col * CELL_SIZE,
           y: -(vh + CELL_SIZE * 2), // Start way above screen
@@ -77,7 +87,9 @@
           color: color,
           targetY: row * CELL_SIZE,
           exitY: vh + 200,
-          radius: RADIUS
+          radius: RADIUS,
+          letter: letter,
+          size: CELL_SIZE
         });
       }
     }
@@ -107,6 +119,15 @@
         ctx.fillStyle = b.color;
         roundRect(ctx, b.x, b.y, b.w, b.h, b.radius);
         ctx.fill();
+        
+        if (b.letter) {
+          ctx.fillStyle = '#050505';
+          ctx.font = `bold ${b.size * 0.45}px "Space Grotesk", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(b.letter, b.x + b.w / 2, b.y + b.h / 2);
+        }
+        
         allFinished = false; // Still drawing something
       }
     }
@@ -150,9 +171,9 @@
       await new Promise((resolve) => {
         gsap.to(boxes, {
           y: (i, target) => target.targetY,
-          duration: 1.0,
-          ease: 'bounce.out', // Bouncy physical reality feel
-          stagger: { amount: 0.5, from: 'random' },
+          duration: 0.6,
+          ease: 'power3.out', // Snappy, zero delay feel
+          stagger: { amount: 0.25, from: 'random' },
           onComplete: resolve
         });
       });
@@ -171,9 +192,9 @@
       // Animate OUT: Boxes fall down off the screen
       gsap.to(boxes, {
         y: (i, target) => target.exitY,
-        duration: 0.6,
+        duration: 0.4,
         ease: 'power3.in',
-        stagger: { amount: 0.4, from: 'random' },
+        stagger: { amount: 0.2, from: 'random' },
         onComplete: () => {
           if (canvas) canvas.style.pointerEvents = 'none';
           isTransitioning = false;
