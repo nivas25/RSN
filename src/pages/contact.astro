@@ -1,0 +1,411 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import KineticTopNav from '../components/navigation/KineticTopNav.astro';
+import Footer from '../components/navigation/Footer.astro';
+---
+
+<BaseLayout title="Contact — Reddy Sai Nivas">
+  <KineticTopNav />
+
+  <main class="contact-main">
+    <div class="contact-container">
+      
+      <!-- LEFT SIDE: TITLE & INFO -->
+      <div class="contact-left">
+        <h1 class="contact-title">
+          LET'S<br/>
+          BUILD<br/>
+          <span class="highlight">SOMETHING.</span>
+        </h1>
+        
+        <div class="contact-info">
+          <a href="mailto:nivassai2506@gmail.com" class="contact-email">nivassai2506@gmail.com</a>
+          
+          <div class="contact-socials">
+            <a href="https://www.instagram.com/nivas.png" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </a>
+            <a href="https://x.com/_nivas_sai_" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+            <a href="https://www.linkedin.com/in/nivas25" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+            </a>
+            <a href="https://github.com/nivas25" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE: FORM -->
+      <div class="contact-right">
+        <form id="contact-form" class="contact-form">
+          <div class="form-group">
+            <input type="text" id="name" name="name" placeholder="Name" required />
+            <label for="name">Your Name <span class="required-star">*</span></label>
+            <div class="line-focus"></div>
+          </div>
+          
+          <div class="form-group">
+            <input type="email" id="email" name="email" placeholder="Email" required />
+            <label for="email">Your Email <span class="required-star">*</span></label>
+            <div class="line-focus"></div>
+          </div>
+          
+          <div class="form-group">
+            <textarea id="message" name="message" placeholder="Message" rows="5" required></textarea>
+            <label for="message">Message <span class="required-star">*</span></label>
+            <div class="line-focus"></div>
+          </div>
+          
+          <button type="submit" id="submit-btn" class="submit-btn">
+            <span class="btn-text">SEND MESSAGE</span>
+            <div class="spinner"></div>
+          </button>
+          
+          <div id="form-status" class="form-status"></div>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const form = document.getElementById('contact-form') as HTMLFormElement;
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const statusEl = document.getElementById('form-status') as HTMLDivElement;
+
+    if (form) {
+      // Remove any existing event listeners to prevent duplicate submissions
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        btn.classList.add('loading');
+        btn.disabled = true;
+        statusEl.textContent = '';
+        statusEl.className = 'form-status';
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+          const res = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+
+          if (res.ok) {
+            form.reset();
+            statusEl.textContent = 'Message sent successfully. I will get back to you soon.';
+            statusEl.classList.add('success');
+          } else {
+            statusEl.textContent = result.error || 'Something went wrong. Please try again.';
+            statusEl.classList.add('error');
+          }
+        } catch (err) {
+          statusEl.textContent = 'Failed to send message. Check your connection.';
+          statusEl.classList.add('error');
+        } finally {
+          btn.classList.remove('loading');
+          btn.disabled = false;
+        }
+      };
+    }
+  });
+</script>
+
+<style>
+  /* Base Reset for Page */
+  .contact-main {
+    min-height: 100vh;
+    padding: 160px 40px 100px;
+    background-color: #FFFFFF;
+    color: #050505;
+    display: flex;
+    align-items: center;
+  }
+
+  .contact-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: flex-start;
+  }
+
+  /* LEFT SIDE */
+  .contact-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .contact-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.5rem, 10vw, 7rem); /* Fixed mobile overflow */
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    margin: 0 0 60px 0;
+    word-break: break-word;
+  }
+
+  .highlight {
+    color: #FF4F00; /* Vibrant Orange */
+  }
+
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .contact-email {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    color: #050505;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .contact-email:hover {
+    color: #1743FF; /* Royal Blue */
+  }
+
+  .contact-socials {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .contact-socials a {
+    color: rgba(5, 5, 5, 0.4);
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .contact-socials a:hover {
+    color: #050505;
+    transform: translateY(-2px);
+  }
+
+  /* RIGHT SIDE: FORM */
+  .contact-right {
+    width: 100%;
+    max-width: 600px;
+    padding-top: 20px;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .form-group {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Floating Label Input Style */
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(5, 5, 5, 0.2);
+    color: #050505;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    padding: 12px 0 12px 0;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+
+  .form-group input::placeholder,
+  .form-group textarea::placeholder {
+    color: transparent;
+  }
+
+  /* Override Chrome Autofill background */
+  .form-group input:-webkit-autofill,
+  .form-group input:-webkit-autofill:hover, 
+  .form-group input:-webkit-autofill:focus, 
+  .form-group input:-webkit-autofill:active,
+  .form-group textarea:-webkit-autofill,
+  .form-group textarea:-webkit-autofill:hover,
+  .form-group textarea:-webkit-autofill:focus,
+  .form-group textarea:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #FFFFFF inset !important;
+      -webkit-text-fill-color: #050505 !important;
+      transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .form-group label {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: rgba(5, 5, 5, 0.5);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .required-star {
+    color: #FF4F00; /* Vibrant Orange */
+    font-weight: bold;
+  }
+
+  .line-focus {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background-color: #1743FF; /* Royal Blue */
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Handle Floating Label States */
+  .form-group input:focus ~ label,
+  .form-group input:not(:placeholder-shown) ~ label,
+  .form-group textarea:focus ~ label,
+  .form-group textarea:not(:placeholder-shown) ~ label {
+    top: -16px;
+    font-size: 0.8rem;
+    color: #1743FF;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .form-group input:focus ~ .line-focus,
+  .form-group textarea:focus ~ .line-focus {
+    width: 100%;
+  }
+
+  /* Submit Button */
+  .submit-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    padding: 18px 48px;
+    background-color: #050505;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-4px);
+    background-color: #1743FF; /* Royal Blue */
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Loading State */
+  .spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+  }
+
+  .submit-btn.loading .btn-text {
+    opacity: 0;
+  }
+
+  .submit-btn.loading .spinner {
+    display: block;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Status Messages */
+  .form-status {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-top: -20px;
+  }
+
+  .form-status.success {
+    color: #1743FF;
+  }
+
+  .form-status.error {
+    color: #FF4F00;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 992px) {
+    .contact-container {
+      grid-template-columns: 1fr;
+      gap: 60px;
+    }
+
+    .contact-title {
+      margin: 0 0 40px 0;
+    }
+
+    .contact-right {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .contact-main {
+      padding: 120px 24px 80px;
+    }
+    .submit-btn {
+      width: 100%;
+    }
+  }
+</style>

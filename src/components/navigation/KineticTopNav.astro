@@ -163,6 +163,13 @@
         centerLink: '/',
         rightLink: '/contact'
       };
+    } else if (path.includes('/contact')) {
+      return {
+        text: 'WORK     ·     ABOUT     ·     HOME',
+        leftLink: '/work',
+        centerLink: '/about',
+        rightLink: '/'
+      };
     } else {
       return {
         text: 'WORK     ·     ABOUT     ·     CONTACT',
