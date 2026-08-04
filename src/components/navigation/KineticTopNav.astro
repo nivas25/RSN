@@ -210,7 +210,7 @@
   }
 
   const texFrontR = makeFaceTex(FACES.front);
-  const frontFace = isMobile ? makeFaceTex(FACES.front) : makeExpandedTex(EXPANDED_W, currentNavConfig.text);
+  const frontFace = makeExpandedTex(EXPANDED_W, currentNavConfig.text);
   let texExpanded = frontFace;
 
   function makeDarkTex(): CanvasTexture {
