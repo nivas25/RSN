@@ -5,6 +5,7 @@ import vercel from '@astrojs/vercel';
 // https://astro.build/config
 export default defineConfig({
   adapter: vercel(),
+  output: 'hybrid',
   // Single-page site — no trailing slashes needed
   trailingSlash: 'never',
 

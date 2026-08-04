@@ -122,11 +122,12 @@
         ctx.fill();
         
         if (b.letter) {
-          ctx.fillStyle = '#050505';
-          ctx.font = `bold ${b.size * 0.45}px "Space Grotesk", sans-serif`;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `normal ${b.size * 0.6}px "Bebas Neue", sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(b.letter, b.x + b.w / 2, b.y + b.h / 2);
+          // Bebas Neue sits a bit high, adjust y offset slightly
+          ctx.fillText(b.letter, b.x + b.w / 2, b.y + b.h / 2 + b.size * 0.05);
         }
         
         allFinished = false; // Still drawing something
