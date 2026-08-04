@@ -42,13 +42,13 @@ import { PROJECTS } from '../data/projects';
 <script>
   import { gsap } from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  import { preloadAllImages } from '../utils/assetPreloader';
+  import { preloadAllAssets } from '../utils/assetPreloader';
 
   gsap.registerPlugin(ScrollTrigger);
 
   function initWorkPage() {
     // Warm up image cache immediately
-    preloadAllImages();
+    preloadAllAssets();
 
     // Ensure 3D nav is visible
     const navWrapper = document.querySelector('.pure-3d-nav-wrapper') as HTMLElement;
