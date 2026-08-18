@@ -19,6 +19,16 @@ export interface ProjectCredit {
   names: string[];
 }
 
+export interface ProjectSpecification {
+  label: string;
+  value: string;
+}
+
+export interface ProjectLink {
+  label: string;
+  url: string;
+}
+
 export interface Project {
   id: string;
   slug: string;
@@ -34,10 +44,92 @@ export interface Project {
   // Project detail page fields
   awards?: string[];
   credits?: ProjectCredit[];
+  specifications?: ProjectSpecification[];
+  links?: ProjectLink[];
   gallery?: ProjectCard[];
 }
 
 export const PROJECTS: Project[] = [
+  {
+    id: 'rekh',
+    slug: 'rekh',
+    client: 'GENERATIVE AI',
+    year: '2026',
+    title: 'Rekh',
+    description: 'An end-to-end pipeline training a highly authentic, culture-preserving LoRA for FLUX.1-dev to replicate traditional Sanganeri hand-block prints using VLM dataset filtering.',
+    readMoreLink: '/work/rekh',
+    externalLink: 'https://github.com/nivas25/rekh-sanganeri',
+    tags: ['Generative AI', 'LoRA', 'FLUX.1', 'Cultural Preservation'],
+    links: [
+      { label: 'COMPARISON WEBSITE', url: 'https://nivas25.github.io/rekh-sanganeri/' },
+      { label: 'MODEL (HUGGING FACE)', url: 'https://huggingface.co/nivas25/rekh-sanganeri-lora' },
+      { label: 'DATASET (HUGGING FACE)', url: 'https://huggingface.co/datasets/nivas25/rekh-sanganeri-dataset' },
+      { label: 'SOURCE CODE', url: 'https://github.com/nivas25/rekh-sanganeri' }
+    ],
+    specifications: [
+      { label: 'Base Model', value: 'FLUX.1-dev' },
+      { label: 'Architecture', value: 'LoRA v2 (Rank 32, Alpha 32)' },
+      { label: 'Dataset', value: '178 hand-curated images' },
+      { label: 'Captioning', value: 'Florence-2-large' },
+      { label: 'Optimizer', value: 'AdamW 8-bit (bf16)' },
+      { label: 'Total Steps', value: '3000' },
+      { label: 'Infrastructure', value: 'Modal (1x NVIDIA A100)' }
+    ],
+    cards: [
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/logo.png?updatedAt=1787032210771&tr=w-1200,f-auto,q-auto',
+        alt: 'Rekh Sanganeri AI Logo'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega_lorav2_p9.jpg?updatedAt=1787032267736&tr=w-800,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output'
+      }
+    ],
+    gallery: [
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/logo.png?updatedAt=1787032210771&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Sanganeri AI Logo'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega_lorav2_p9.jpg?updatedAt=1787032267736&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 1'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega_lorav2_p5.jpg?updatedAt=1787032267668&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 2'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega_lorav2_p15.jpg?updatedAt=1787032266317&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 3'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega_dorav1_p3.jpg?updatedAt=1787032262345&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 4'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega3_lorav2_p5.jpg?updatedAt=1787032258688&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 5'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega2_lorav2_p9.jpg?updatedAt=1787032256481&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 6'
+      },
+      {
+        type: 'image',
+        url: 'https://ik.imagekit.io/nivas25/Rekh/mega_showdown_images/mega3_base_p0.jpg?updatedAt=1787032253776&tr=w-1600,f-auto,q-auto',
+        alt: 'Rekh Generative AI Output 7'
+      }
+    ]
+  },
   {
     id: 'sudriv',
     slug: 'sudriv',

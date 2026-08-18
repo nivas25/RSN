@@ -47,15 +47,29 @@ const { project } = Astro.props;
         
         <p class="project-description">{project.description}</p>
         
-        <div class="visit-link-wrapper">
-          <a href={project.externalLink || '#'} class="visit-link" target="_blank" rel="noopener noreferrer">
-            VISIT PROJECT 
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </a>
-        </div>
+        {project.links && project.links.length > 0 ? (
+          <div class="visit-link-wrapper" style="display: flex; flex-direction: column; gap: 12px;">
+            {project.links.map(link => (
+              <a href={link.url} class="visit-link" target="_blank" rel="noopener noreferrer">
+                {link.label}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7"></line>
+                  <polyline points="7 7 17 7 17 17"></polyline>
+                </svg>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div class="visit-link-wrapper">
+            <a href={project.externalLink || '#'} class="visit-link" target="_blank" rel="noopener noreferrer">
+              VISIT PROJECT 
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+            </a>
+          </div>
+        )}
         
         {project.awards && project.awards.length > 0 && (
           <div class="project-awards">
@@ -80,6 +94,25 @@ const { project } = Astro.props;
                   </div>
                   <div class="credit-names">
                     {credit.names.map(name => <div>{name}</div>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {project.specifications && project.specifications.length > 0 && (
+          <div class="project-credits">
+            <h3>TECHNICAL SPECS</h3>
+            <div class="credits-grid">
+              {project.specifications.map(spec => (
+                <div class="credit-row">
+                  <div class="credit-role" style="color: #666666;">
+                    {spec.label}
+                    <span class="dots"></span>
+                  </div>
+                  <div class="credit-names" style="font-weight: 500; max-width: 65%; line-height: 1.4;">
+                    <div>{spec.value}</div>
                   </div>
                 </div>
               ))}
